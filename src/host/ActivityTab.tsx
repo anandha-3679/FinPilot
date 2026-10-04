@@ -95,7 +95,7 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
                     <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">
                       Recorded Outcome
                     </div>
-                    {/^awaiting/i.test(dec.outcome ?? '') ? 'Awaiting outcome (30-day check-in)' : groupRupeesInText(dec.outcome ?? '')}
+                    {!dec.outcome || /^awaiting outcome/i.test(dec.outcome) ? 'Awaiting 30-day check-in' : groupRupeesInText(dec.outcome)}
                   </div>
                 </div>
 

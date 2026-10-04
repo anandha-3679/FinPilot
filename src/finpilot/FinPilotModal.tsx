@@ -53,6 +53,7 @@ export interface FinPilotDecision {
   reduceMonths?: number;
   reducePermanent?: boolean;
   withdrawAmount?: number;
+  estimatedImpact?: number;
   rememberDecision: boolean;
   resumeDate?: string;
 }
@@ -452,6 +453,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
             ? smallerAmount
             : withdrawAmount
           : undefined,
+      estimatedImpact: selectedImpact.valueLost,
       rememberDecision,
       resumeDate: chosenResumeDate
     });
@@ -619,15 +621,19 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                       <span className="text-slate-500 font-medium">Previous Action:</span> {groupRupeesInText(matchedMemory.action)}
                     </p>
                     <p>
-                      <span className="text-slate-500 font-medium">Observed Outcome:</span>{' '}
-                      {/^awaiting/i.test(matchedMemory.outcome ?? '') || !matchedMemory.outcome
-                        ? 'Awaiting outcome (30-day check-in)'
+                      <span className="text-slate-500 font-medium">{/awaiting/i.test(matchedMemory.outcome ?? '') || !matchedMemory.outcome ? 'Status:' : 'Observed Outcome:'}</span>{' '}
+                      {!matchedMemory.outcome || /^awaiting outcome/i.test(matchedMemory.outcome)
+                        ? 'Awaiting 30-day check-in'
                         : groupRupeesInText(matchedMemory.outcome)}
                     </p>
                   </div>
                   <div className="p-2.5 rounded-lg bg-emerald-100/70 border border-emerald-300 text-xs text-emerald-900">
                     <span className="font-semibold">Suggested plan from past outcome:</span>{' '}
-                    {matchedMemory.reasonCategory === 'Temporary cash need'
+                    {payload.action === 'withdraw' &&
+                    /cash/i.test(matchedMemory.action) &&
+                    payload.availableCash < withdrawAmount
+                      ? `Last time cash covered this. Cash is now ${formatINR(payload.availableCash)}, so cash alone won't cover it. Consider withdrawing a smaller amount (for example ${formatINR(Math.max(1000, Math.min(payload.availableCash, withdrawAmount)))}) and keeping the rest invested.`
+                      : matchedMemory.reasonCategory === 'Temporary cash need'
                       ? 'Same plan as last time: pause 1 month with auto-resume.'
                       : matchedMemory.reasonCategory === 'Market worry'
                       ? 'Consider reducing temporarily instead of a full pause so some instalments continue.'

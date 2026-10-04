@@ -140,6 +140,7 @@ export function useAppStore() {
     reduceMonths?: number;
     reducePermanent?: boolean;
     withdrawAmount?: number;
+    estimatedImpact?: number;
     rememberDecision?: boolean;
     resumeDate?: string;
   }) => {
@@ -155,6 +156,7 @@ export function useAppStore() {
       rememberDecision = true,
       resumeDate
     } = params;
+    const pendingOutcome = `Estimated ${formatINR(params.estimatedImpact ?? 0)} goal impact · awaiting 30-day check-in`;
 
     setState((prev) => {
       let updatedHoldings = [...prev.holdings];
@@ -182,7 +184,7 @@ export function useAppStore() {
               reasonCategory,
               action: `Decided to keep ${fundName} active`,
               durationOrAmount: 'No change',
-              outcome: 'Awaiting outcome (30-day check-in).',
+              outcome: pendingOutcome,
               fundName
             },
             ...updatedDecisions
@@ -210,7 +212,7 @@ export function useAppStore() {
               reasonCategory,
               action: `Paused ${fundName} for ${pauseMonths} months${isAuto ? ' (auto-resume)' : ''}`,
               durationOrAmount: `${pauseMonths} months`,
-              outcome: 'Awaiting outcome (30-day check-in).',
+              outcome: pendingOutcome,
               fundName
             },
             ...updatedDecisions
@@ -262,7 +264,7 @@ export function useAppStore() {
               reasonCategory,
               action: `Reduced ${fundName} to ${formatINR(targetAmount)}/mo ${durationDesc}`,
               durationOrAmount: reducePermanent ? 'Permanent' : `${reduceMonths} months`,
-              outcome: 'Awaiting outcome (30-day check-in).',
+              outcome: pendingOutcome,
               fundName
             },
             ...updatedDecisions
@@ -302,7 +304,7 @@ export function useAppStore() {
               reasonCategory,
               action: `Used cash reserve ${formatINR(withdrawAmount)} instead of withdrawing`,
               durationOrAmount: `${formatINR(withdrawAmount)}`,
-              outcome: 'Awaiting outcome (30-day check-in).',
+              outcome: pendingOutcome,
               fundName
             },
             ...updatedDecisions
@@ -341,7 +343,7 @@ export function useAppStore() {
               reasonCategory,
               action: `Withdrew ${formatINR(withdrawAmount)} from ${fundName}`,
               durationOrAmount: formatINR(withdrawAmount),
-              outcome: 'Awaiting outcome (30-day check-in).',
+              outcome: pendingOutcome,
               fundName
             },
             ...updatedDecisions

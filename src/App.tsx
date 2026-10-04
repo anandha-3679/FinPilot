@@ -149,6 +149,7 @@ export function App() {
       reduceMonths: decision.reduceMonths,
       reducePermanent: decision.reducePermanent,
       withdrawAmount: decision.withdrawAmount,
+      estimatedImpact: decision.estimatedImpact,
       rememberDecision: decision.rememberDecision,
       resumeDate: decision.resumeDate
     });
