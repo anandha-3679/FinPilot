@@ -15,6 +15,7 @@ import {
   USER_INFO
 } from '../data/seed';
 import { calculateImpact } from '../engine/impactEngine';
+import { formatINR } from '../engine/format';
 
 export interface AppState {
   holdings: Holding[];
@@ -299,8 +300,8 @@ export function useAppStore() {
               id: `dec_${Date.now()}`,
               date: '2 Nov 2026',
               reasonCategory,
-              action: `Used ₹${withdrawAmount} from available cash instead of fund withdrawal`,
-              durationOrAmount: `₹${withdrawAmount}`,
+              action: `Used cash reserve ${formatINR(withdrawAmount)} instead of withdrawing`,
+              durationOrAmount: `${formatINR(withdrawAmount)}`,
               outcome: 'Protected portfolio investments. ₹0 goal impact.',
               fundName
             },
@@ -313,8 +314,8 @@ export function useAppStore() {
             id: `act_${Date.now()}`,
             date: '2 Nov 2026',
             type: 'WITHDRAW',
-            title: `Cash deployed: ₹${withdrawAmount}`,
-            description: `Utilized available cash reserve to protect ${fundName} holding.`
+            title: `Used cash reserve ${formatINR(withdrawAmount)} instead of withdrawing`,
+            description: `Used cash reserve ${formatINR(withdrawAmount)} instead of withdrawing from ${fundName}.`
           },
           ...updatedActivities
         ];

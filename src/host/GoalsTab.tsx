@@ -11,8 +11,8 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ goals }) => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Financial Goals</h1>
-        <p className="text-xs text-gray-400 mt-0.5">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Financial Goals</h1>
+        <p className="text-xs text-slate-500 mt-0.5">
           Long-term milestones, target horizons, and current tracking statuses
         </p>
       </div>
@@ -24,28 +24,28 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ goals }) => {
           return (
             <div
               key={g.id}
-              className="p-6 rounded-2xl bg-[#121826] border border-[#1e293b] flex flex-col justify-between space-y-5"
+              className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between space-y-5"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
                       <Target className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-white">{g.name}</h3>
-                      <div className="text-[11px] text-gray-400">
+                      <h3 className="text-base font-bold text-slate-900">{g.name}</h3>
+                      <div className="text-[11px] text-slate-500">
                         Horizon: {g.targetDate} ({g.monthsLeft} months left)
                       </div>
                     </div>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                    className={`px-3 py-1 rounded-full text-xs font-bold border ${
                       g.status === 'On track'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                         : g.status === 'Slightly behind'
-                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                        : 'bg-red-500/10 text-red-400 border-red-500/20'
+                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                        : 'bg-rose-50 text-rose-800 border-rose-200'
                     }`}
                   >
                     {g.status}
@@ -55,17 +55,17 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ goals }) => {
                 {/* Progress bar */}
                 <div className="mt-5 space-y-1.5">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-400">Progress toward target</span>
-                    <span className="font-mono text-emerald-400 font-bold">{pct}%</span>
+                    <span className="text-slate-500 font-medium">Progress toward target</span>
+                    <span className="font-mono text-emerald-700 font-bold">{pct}%</span>
                   </div>
-                  <div className="w-full h-2.5 rounded-full bg-gray-800 overflow-hidden">
+                  <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
                     <div
                       className={`h-full transition-all duration-500 ${
                         g.status === 'On track'
-                          ? 'bg-emerald-500'
+                          ? 'bg-emerald-600'
                           : g.status === 'Slightly behind'
                           ? 'bg-amber-500'
-                          : 'bg-red-500'
+                          : 'bg-rose-500'
                       }`}
                       style={{ width: `${pct}%` }}
                     />
@@ -73,22 +73,22 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ goals }) => {
                 </div>
 
                 {/* Metric breakdown */}
-                <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-gray-800/80 text-xs">
+                <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-100 text-xs">
                   <div>
-                    <div className="text-gray-400">Target</div>
-                    <div className="font-mono text-white font-bold mt-0.5">
+                    <div className="text-slate-500 font-medium">Target</div>
+                    <div className="font-mono text-slate-900 font-bold mt-0.5">
                       {formatShortINR(g.target)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400">Corpus Now</div>
-                    <div className="font-mono text-white font-bold mt-0.5">
+                    <div className="text-slate-500 font-medium">Corpus Now</div>
+                    <div className="font-mono text-slate-900 font-bold mt-0.5">
                       {formatINR(g.corpusNow)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400">Monthly SIP</div>
-                    <div className="font-mono text-emerald-400 font-bold mt-0.5">
+                    <div className="text-slate-500 font-medium">Monthly SIP</div>
+                    <div className="font-mono text-emerald-700 font-bold mt-0.5">
                       {formatINR(g.monthlyContribution)}/mo
                     </div>
                   </div>
@@ -96,13 +96,13 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ goals }) => {
               </div>
 
               {/* Linked funds chip list */}
-              <div className="pt-3 border-t border-gray-800/80">
-                <div className="text-[11px] text-gray-400 mb-2">Linked Portfolio Funds:</div>
+              <div className="pt-3 border-t border-slate-100">
+                <div className="text-[11px] text-slate-500 mb-2 font-medium">Linked Portfolio Funds:</div>
                 <div className="flex flex-wrap gap-1.5">
                   {g.linkedFunds.map((fund) => (
                     <span
                       key={fund}
-                      className="px-2.5 py-1 rounded-lg bg-[#0e1524] border border-[#1f2d48] text-[11px] text-gray-300"
+                      className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-700 font-medium"
                     >
                       {fund}
                     </span>

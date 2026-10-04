@@ -50,11 +50,11 @@ export function formatShortINR(value: number): string {
   } else if (absVal >= 100000) {
     const lakh = absVal / 100000;
     formatted = `₹${lakh.toFixed(2).replace(/\.?0+$/, '')} lakh`;
-  } else if (absVal >= 1000) {
-    const k = absVal / 1000;
-    formatted = `₹${k.toFixed(1).replace(/\.?0+$/, '')}k`;
+  } else if (absVal >= 10000) {
+    const lakh = absVal / 100000;
+    formatted = `about ₹${lakh.toFixed(1)} lakh`;
   } else {
-    formatted = `₹${Math.round(absVal)}`;
+    formatted = `₹${Math.round(absVal).toLocaleString('en-IN')}`;
   }
 
   return isNegative ? `-${formatted}` : formatted;
@@ -82,4 +82,83 @@ export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+export interface ExplanationParams {
+  action: 'pause' | 'reduce' | 'withdraw';
+  amount: number;
+  pauseMonths?: number;
+  reducedAmount?: number;
+  reduceDurationMonths?: number;
+  reducePermanent?: boolean;
+  withdrawAmount?: number;
+  contributionsMissed: number;
+  valueLost: number;
+  goalDelayMonths: number;
+  goalName: string;
+  goalMonthsLeft: number;
+  goalDate?: string;
+  assumedRate?: number;
+  selectedReason?: string;
+  marketMode?: 'Calm' | 'Volatile';
+}
+
+/**
+ * Builds deterministic explanation text complying with Indian formatting,
+ * singular/plural months, and no duplicate currency symbols.
+ */
+export function buildExplanationText(params: ExplanationParams): string {
+  const {
+    action,
+    amount,
+    pauseMonths = 3,
+    reducedAmount = 5000,
+    reduceDurationMonths = 3,
+    reducePermanent = false,
+    withdrawAmount = 0,
+    contributionsMissed,
+    valueLost,
+    goalDelayMonths,
+    goalName,
+    goalMonthsLeft,
+    goalDate = 'Dec 2042',
+    assumedRate = 12,
+    selectedReason,
+    marketMode = 'Calm'
+  } = params;
+
+  let targetText = '';
+  const delayText = formatMonths(goalDelayMonths);
+
+  if (action === 'pause') {
+    const delayDesc = goalDelayMonths > 0 ? `${delayText} later` : 'on time';
+    targetText = `Pausing ${formatINR(amount)}/month for ${formatMonths(pauseMonths)} means ${formatShortINR(
+      contributionsMissed
+    )} less invested. By ${goalDate}, that could mean ${formatShortINR(
+      valueLost
+    )} less, and ${goalName} could be reached ${delayDesc}. Based on ${formatMonths(goalMonthsLeft)} to go and an assumed ${assumedRate}% a year.`;
+  } else if (action === 'reduce') {
+    const durText = reducePermanent ? 'permanently' : `for ${formatMonths(reduceDurationMonths)}`;
+    const delayDesc = goalDelayMonths > 0 ? `delaying ${goalName} by ${delayText}.` : `keeping ${goalName} on schedule.`;
+    targetText = `Reducing to ${formatINR(reducedAmount)}/month ${durText} means investing ${formatShortINR(
+      contributionsMissed
+    )} less. By ${goalDate}, that could result in ${formatShortINR(
+      valueLost
+    )} lower corpus, ${delayDesc}`;
+  } else {
+    const delayDesc = goalDelayMonths > 0 ? `delay ${goalName} by ${delayText}.` : `no delay to ${goalName}.`;
+    targetText = `Withdrawing ${formatINR(withdrawAmount)} could mean ${formatShortINR(
+      valueLost
+    )} less at the goal date and ${delayDesc}`;
+  }
+
+  if (selectedReason === 'Market worry') {
+    if (marketMode === 'Volatile') {
+      targetText += ` Nifty 50 is down 4.2% this week. Your last 3 instalments bought at lower prices, so pausing means missing those units.`;
+    } else {
+      targetText += ` Markets have been steady this week.`;
+    }
+  }
+
+  return targetText;
 }

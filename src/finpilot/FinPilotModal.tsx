@@ -11,8 +11,9 @@ import {
   LineChart as LineChartIcon
 } from 'lucide-react';
 import { calculateImpact, ImpactResult } from '../engine/impactEngine';
-import { formatINR, formatShortINR, formatMonths } from '../engine/format';
+import { formatINR, formatShortINR, formatMonths, buildExplanationText } from '../engine/format';
 import { DecisionRecord } from '../data/seed';
+import { CompassLogo } from './CompassLogo';
 import {
   ResponsiveContainer,
   LineChart,
@@ -339,43 +340,23 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
   useEffect(() => {
     if (step !== 2) return;
 
-    let targetText = '';
-    const goalDate = 'Dec 2042';
-
-    if (payload.action === 'pause') {
-      targetText = `Pausing ₹${formatINR(payload.amount)}/month for ${pauseMonths} months means about ${formatShortINR(
-        currentImpact.contributionsMissed
-      )} less invested. By ${goalDate}, that could mean about ${formatShortINR(
-        currentImpact.valueLost
-      )} less, and ${payload.goalName} could be reached about ${
-        currentImpact.goalDelayMonths
-      } months later. Based on ${payload.goalMonthsLeft} months to go and an assumed ${assumedRate}% a year.`;
-    } else if (payload.action === 'reduce') {
-      const durText = reducePermanent
-        ? 'permanently'
-        : `for ${reduceDurationMonths} months`;
-      targetText = `Reducing to ₹${formatINR(reducedAmount)}/month ${durText} means investing about ${formatShortINR(
-        currentImpact.contributionsMissed
-      )} less. By ${goalDate}, that could result in about ${formatShortINR(
-        currentImpact.valueLost
-      )} lower corpus, delaying ${payload.goalName} by about ${
-        currentImpact.goalDelayMonths
-      } months.`;
-    } else {
-      targetText = `Withdrawing ₹${formatINR(withdrawAmount)} could mean about ${formatShortINR(
-        currentImpact.valueLost
-      )} less at the goal date and delay ${payload.goalName} by about ${
-        currentImpact.goalDelayMonths
-      } months.`;
-    }
-
-    if (selectedReason === 'Market worry') {
-      if (marketMode === 'Volatile') {
-        targetText += ` Nifty 50 is down 4.2% this week. Your last 3 instalments bought at lower prices, so pausing means missing those units.`;
-      } else {
-        targetText += ` Markets have been steady this week.`;
-      }
-    }
+    const targetText = buildExplanationText({
+      action: payload.action,
+      amount: payload.amount,
+      pauseMonths,
+      reducedAmount,
+      reduceDurationMonths,
+      reducePermanent,
+      withdrawAmount,
+      contributionsMissed: currentImpact.contributionsMissed,
+      valueLost: currentImpact.valueLost,
+      goalDelayMonths: currentImpact.goalDelayMonths,
+      goalName: payload.goalName,
+      goalMonthsLeft: payload.goalMonthsLeft,
+      assumedRate,
+      selectedReason,
+      marketMode
+    });
 
     setAiGenerating(true);
     setAiAborted(false);
@@ -477,30 +458,31 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-3xl bg-[#111827] border border-[#1f293d] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-3xl bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Top Header */}
-        <div className="px-6 py-4 bg-[#0d1424] border-b border-[#1f293d] flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {step > 1 && (
               <button
                 onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
-                className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+                className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-200/60 transition-colors"
                 title="Go back"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <div className="flex items-center gap-2.5">
+                <CompassLogo size={22} showText={false} />
+                <span className="text-xs uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
                   FinPilot Intelligence
                 </span>
-                <span className="text-xs text-gray-400">
-                  Anonymous session: <span className="font-mono">{payload.anonUserId}</span>
+                <span className="text-xs text-slate-500">
+                  Anonymous session: <span className="font-mono font-medium">{payload.anonUserId}</span>
                 </span>
               </div>
-              <h2 className="text-lg font-bold text-white mt-1">
+              <h2 className="text-lg font-bold text-slate-900 mt-1">
                 {payload.action === 'pause' && 'Review your SIP change'}
                 {payload.action === 'reduce' && 'Review your SIP change'}
                 {payload.action === 'withdraw' && `Review Withdrawal: ${payload.fundName}`}
@@ -509,7 +491,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition-colors"
             title="Cancel (Esc)"
           >
             <X className="w-5 h-5" />
@@ -517,56 +499,56 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
         </div>
 
         {/* 3-Step Wizard Stepper */}
-        <div className="px-6 py-3 bg-[#0a0e1a] border-b border-[#1f293d] flex items-center justify-between">
+        <div className="px-6 py-3 bg-white border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div
               className={`flex items-center gap-2 ${
-                step >= 1 ? 'text-emerald-400' : 'text-gray-500'
+                step >= 1 ? 'text-emerald-700 font-semibold' : 'text-slate-400'
               }`}
             >
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   step === 1
-                    ? 'bg-emerald-500 text-black'
+                    ? 'bg-emerald-600 text-white'
                     : step > 1
-                    ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'bg-gray-800 text-gray-400'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-slate-100 text-slate-500'
                 }`}
               >
                 1
               </div>
               <span className="text-sm font-medium">Why</span>
             </div>
-            <div className="w-8 h-px bg-gray-700" />
+            <div className="w-8 h-px bg-slate-200" />
             <div
               className={`flex items-center gap-2 ${
-                step >= 2 ? 'text-emerald-400' : 'text-gray-500'
+                step >= 2 ? 'text-emerald-700 font-semibold' : 'text-slate-400'
               }`}
             >
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   step === 2
-                    ? 'bg-emerald-500 text-black'
+                    ? 'bg-emerald-600 text-white'
                     : step > 2
-                    ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'bg-gray-800 text-gray-400'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-slate-100 text-slate-500'
                 }`}
               >
                 2
               </div>
               <span className="text-sm font-medium">Impact</span>
             </div>
-            <div className="w-8 h-px bg-gray-700" />
+            <div className="w-8 h-px bg-slate-200" />
             <div
               className={`flex items-center gap-2 ${
-                step >= 3 ? 'text-emerald-400' : 'text-gray-500'
+                step >= 3 ? 'text-emerald-700 font-semibold' : 'text-slate-400'
               }`}
             >
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   step === 3
-                    ? 'bg-emerald-500 text-black'
-                    : 'bg-gray-800 text-gray-400'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-100 text-slate-500'
                 }`}
               >
                 3
@@ -574,8 +556,8 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
               <span className="text-sm font-medium">Confirm</span>
             </div>
           </div>
-          <div className="text-xs text-gray-400">
-            Linked Goal: <span className="text-white font-medium">{payload.goalName}</span>
+          <div className="text-xs text-slate-500">
+            Linked Goal: <span className="text-slate-900 font-medium">{payload.goalName}</span>
           </div>
         </div>
 
@@ -585,10 +567,10 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-slate-800 mb-1">
                   What is prompting this decision?
                 </label>
-                <p className="text-xs text-gray-400 mb-3">
+                <p className="text-xs text-slate-500 mb-3">
                   We store categories only, never free-text or personal data.
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -599,8 +581,8 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                         onClick={() => setSelectedReason(reason)}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                           selectedReason === reason
-                            ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                            : 'bg-[#151f33] text-gray-300 border border-[#1f2d48] hover:border-gray-600'
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-200/60'
                         }`}
                       >
                         {reason}
@@ -612,20 +594,20 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
 
               {/* Decision Memory Match ("You've been here before") */}
               {matchedMemory && (
-                <div className="p-4 rounded-xl bg-gradient-to-r from-[#182338] to-[#121c2e] border border-emerald-500/30 space-y-3 animate-fade-in">
-                  <div className="flex items-center gap-2 text-emerald-400 text-sm font-semibold">
-                    <History className="w-4 h-4" />
+                <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-3 animate-fade-in">
+                  <div className="flex items-center gap-2 text-emerald-800 text-sm font-bold">
+                    <History className="w-4 h-4 text-emerald-700" />
                     You've been here before ({matchedMemory.date})
                   </div>
-                  <div className="text-xs text-gray-300 space-y-1">
+                  <div className="text-xs text-slate-700 space-y-1">
                     <p>
-                      <span className="text-gray-400">Previous Action:</span> {matchedMemory.action}
+                      <span className="text-slate-500 font-medium">Previous Action:</span> {matchedMemory.action}
                     </p>
                     <p>
-                      <span className="text-gray-400">Observed Outcome:</span> {matchedMemory.outcome}
+                      <span className="text-slate-500 font-medium">Observed Outcome:</span> {matchedMemory.outcome}
                     </p>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-xs text-emerald-300">
+                  <div className="p-2.5 rounded-lg bg-emerald-100/70 border border-emerald-300 text-xs text-emerald-900">
                     <span className="font-semibold">Suggested plan from past outcome:</span>{' '}
                     {matchedMemory.reasonCategory === 'Temporary cash need' &&
                       'Same plan as last time: pause 1 month with auto-resume.'}
@@ -638,20 +620,20 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
               )}
 
               {/* Memory Settings & Privacy */}
-              <div className="pt-4 border-t border-[#1f293d] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <label className="flex items-center gap-3 cursor-pointer text-sm text-gray-300">
+              <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <label className="flex items-center gap-3 cursor-pointer text-sm text-slate-700">
                   <input
                     type="checkbox"
                     checked={rememberDecision}
                     onChange={(e) => setRememberDecision(e.target.checked)}
-                    className="w-4 h-4 rounded text-emerald-500 bg-gray-900 border-gray-700 focus:ring-emerald-500"
+                    className="w-4 h-4 rounded text-emerald-600 bg-white border-slate-300 focus:ring-emerald-500"
                   />
                   <span>Remember this decision (Decision Memory)</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowMemoryManager(!showMemoryManager)}
-                  className="text-xs text-emerald-400 hover:underline flex items-center gap-1"
+                  className="text-xs text-emerald-700 font-semibold hover:underline flex items-center gap-1"
                 >
                   <History className="w-3.5 h-3.5" />
                   View / delete my decision memory ({decisions.length})
@@ -660,27 +642,27 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
 
               {/* Manage Decision Memory modal toggle */}
               {showMemoryManager && (
-                <div className="p-4 rounded-xl bg-[#0e1626] border border-[#1f293d] space-y-3">
-                  <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
                     Stored Decision Memory Records
                   </h4>
                   {decisions.length === 0 ? (
-                    <p className="text-xs text-gray-500">No decision records stored.</p>
+                    <p className="text-xs text-slate-500">No decision records stored.</p>
                   ) : (
                     <div className="space-y-2">
                       {decisions.map((dec) => (
                         <div
                           key={dec.id}
-                          className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-[#141e33] border border-[#1f2d48]"
+                          className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-white border border-slate-200 shadow-xs"
                         >
                           <div>
-                            <span className="font-semibold text-white">{dec.reasonCategory}</span>{' '}
-                            <span className="text-gray-400">({dec.date})</span>
-                            <div className="text-gray-400 text-[11px]">{dec.action}</div>
+                            <span className="font-semibold text-slate-900">{dec.reasonCategory}</span>{' '}
+                            <span className="text-slate-500">({dec.date})</span>
+                            <div className="text-slate-600 text-[11px]">{dec.action}</div>
                           </div>
                           <button
                             onClick={() => onDeleteDecision(dec.id)}
-                            className="px-2 py-1 text-xs text-red-400 hover:bg-red-950/40 rounded transition-colors"
+                            className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded transition-colors font-medium"
                           >
                             Delete
                           </button>
@@ -696,10 +678,10 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                 <button
                   disabled={!selectedReason}
                   onClick={() => setStep(2)}
-                  className={`px-6 py-2.5 rounded-xl font-medium text-sm transition-all ${
+                  className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                     selectedReason
-                      ? 'bg-emerald-500 text-black hover:bg-emerald-400'
-                      : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >
                   Analyze Impact →
@@ -713,15 +695,15 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
           {step === 2 && (
             <div className="space-y-6">
               {/* Dynamic Action Input Controls (Sliders & Switches) */}
-              <div className="p-4 rounded-xl bg-[#0f172a] border border-[#1f293d] space-y-4">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
                 {payload.action === 'pause' && (
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-300">
+                      <span className="text-sm font-semibold text-slate-800">
                         Pause duration (1–24 months):
                       </span>
-                      <span className="text-sm font-mono text-emerald-400 font-bold">
-                        {pauseMonths} months
+                      <span className="text-sm font-mono text-emerald-700 font-bold">
+                        {formatMonths(pauseMonths)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-3">
@@ -731,8 +713,8 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                           onClick={() => setPauseMonths(m)}
                           className={`px-3 py-1 rounded-lg text-xs font-semibold ${
                             pauseMonths === m
-                              ? 'bg-emerald-500 text-black'
-                              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
                           }`}
                         >
                           {m} mo
@@ -745,10 +727,10 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                       max={24}
                       value={pauseMonths}
                       onChange={(e) => setPauseMonths(Number(e.target.value))}
-                      className="w-full accent-emerald-500"
+                      className="w-full accent-emerald-600"
                     />
                     {(pauseMonths < 1 || pauseMonths > 24) && (
-                      <p className="text-xs text-red-400 mt-1">
+                      <p className="text-xs text-rose-600 mt-1">
                         Pause duration must be between 1 and 24 months.
                       </p>
                     )}
@@ -758,10 +740,10 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                 {payload.action === 'reduce' && (
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-300">
+                      <span className="text-sm font-semibold text-slate-800">
                         New Monthly SIP Amount:
                       </span>
-                      <span className="text-sm font-mono text-emerald-400 font-bold">
+                      <span className="text-sm font-mono text-emerald-700 font-bold">
                         {formatINR(reducedAmount)}/mo
                       </span>
                     </div>
@@ -773,7 +755,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                         step={500}
                         value={reducedAmount}
                         onChange={(e) => setReducedAmount(Number(e.target.value))}
-                        className="flex-1 accent-emerald-500"
+                        className="flex-1 accent-emerald-600"
                       />
                       <input
                         type="number"
@@ -781,19 +763,19 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                         max={payload.amount - 1}
                         value={reducedAmount}
                         onChange={(e) => setReducedAmount(Number(e.target.value))}
-                        className="w-28 px-2 py-1 bg-gray-900 border border-gray-700 rounded-lg text-sm font-mono text-right"
+                        className="w-28 px-2 py-1 bg-white border border-slate-300 rounded-lg text-sm font-mono text-right text-slate-900"
                       />
                     </div>
                     {reducedAmount >= payload.amount && (
-                      <p className="text-xs text-red-400">
+                      <p className="text-xs text-rose-600">
                         Reduced amount must be less than current amount ({formatINR(payload.amount)})
                       </p>
                     )}
 
                     {/* Time-bound duration vs Permanent toggle (Item 3) */}
-                    <div className="pt-2 border-t border-gray-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="pt-2 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-300">Duration:</span>
+                        <span className="text-slate-700 font-medium">Duration:</span>
                         <div className="flex items-center gap-1.5">
                           {[1, 3, 6, 12].map((m) => (
                             <button
@@ -802,8 +784,8 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                               onClick={() => setReduceDurationMonths(m)}
                               className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
                                 !reducePermanent && reduceDurationMonths === m
-                                  ? 'bg-emerald-500 text-black'
-                                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-40'
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40'
                               }`}
                             >
                               {m} mo
@@ -812,20 +794,20 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                         </div>
                       </div>
 
-                      <label className="flex items-center gap-2 cursor-pointer text-gray-300">
+                      <label className="flex items-center gap-2 cursor-pointer text-slate-700">
                         <input
                           type="checkbox"
                           checked={reducePermanent}
                           onChange={(e) => setReducePermanent(e.target.checked)}
-                          className="w-4 h-4 rounded text-emerald-500 bg-gray-900 border-gray-700"
+                          className="w-4 h-4 rounded text-emerald-600 bg-white border-slate-300"
                         />
                         <span>Make permanent</span>
                       </label>
                     </div>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-[11px] text-slate-500">
                       {reducePermanent
                         ? 'Reduction applies for the entire remaining horizon.'
-                        : `Reduce to ${formatINR(reducedAmount)} for ${reduceDurationMonths} months, then auto-restore.`}
+                        : `Reduce to ${formatINR(reducedAmount)} for ${formatMonths(reduceDurationMonths)}, then auto-restore.`}
                     </p>
                   </div>
                 )}
@@ -833,10 +815,10 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                 {payload.action === 'withdraw' && (
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-300">
+                      <span className="text-sm font-semibold text-slate-800">
                         Withdrawal amount (Max {formatINR(payload.amount)}):
                       </span>
-                      <span className="text-sm font-mono text-emerald-400 font-bold">
+                      <span className="text-sm font-mono text-emerald-700 font-bold">
                         {formatINR(withdrawAmount)}
                       </span>
                     </div>
@@ -847,8 +829,8 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                           onClick={() => setWithdrawAmount(Math.round(payload.amount * pct))}
                           className={`px-3 py-1 rounded-lg text-xs font-semibold ${
                             withdrawAmount === Math.round(payload.amount * pct)
-                              ? 'bg-emerald-500 text-black'
-                              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
                           }`}
                         >
                           {pct === 1 ? 'Full' : `${pct * 100}%`}
@@ -862,10 +844,10 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                       step={1000}
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(Number(e.target.value))}
-                      className="w-full accent-emerald-500"
+                      className="w-full accent-emerald-600"
                     />
                     {(withdrawAmount <= 0 || withdrawAmount > payload.amount) && (
-                      <p className="text-xs text-red-400 mt-1">
+                      <p className="text-xs text-rose-600 mt-1">
                         Please enter a valid amount between ₹1 and {formatINR(payload.amount)}.
                       </p>
                     )}
@@ -875,38 +857,38 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
 
               {/* 1) 3 Impact Tiles */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-[#131b2e] border border-[#1f293d]">
-                  <div className="text-xs text-gray-400">Goal Delay</div>
-                  <div className="text-2xl font-bold font-mono text-amber-400 mt-1">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 shadow-xs">
+                  <div className="text-xs text-slate-500 font-medium">Goal Delay</div>
+                  <div className="text-2xl font-bold font-mono text-amber-600 mt-1">
                     +{formatMonths(currentImpact.goalDelayMonths)}
                   </div>
-                  <div className="text-[11px] text-gray-400 mt-1">
+                  <div className="text-[11px] text-slate-400 mt-1">
                     Postpones target milestone
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#131b2e] border border-[#1f293d]">
-                  <div className="text-xs text-gray-400">Projected Value Lost</div>
-                  <div className="text-2xl font-bold font-mono text-red-400 mt-1">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 shadow-xs">
+                  <div className="text-xs text-slate-500 font-medium">Projected Value Lost</div>
+                  <div className="text-2xl font-bold font-mono text-rose-600 mt-1">
                     {formatINR(currentImpact.valueLost)}
                   </div>
-                  <div className="text-[11px] text-gray-400 mt-1">
+                  <div className="text-[11px] text-slate-400 mt-1">
                     Compounded over remaining horizon
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#131b2e] border border-[#1f293d]">
-                  <div className="text-xs text-gray-400">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 shadow-xs">
+                  <div className="text-xs text-slate-500 font-medium">
                     {payload.action === 'withdraw'
                       ? 'Remaining Holding'
                       : 'Contributions Missed'}
                   </div>
-                  <div className="text-2xl font-bold font-mono text-white mt-1">
+                  <div className="text-2xl font-bold font-mono text-slate-900 mt-1">
                     {payload.action === 'withdraw'
                       ? formatINR(currentImpact.remainingHolding)
                       : formatINR(currentImpact.contributionsMissed)}
                   </div>
-                  <div className="text-[11px] text-gray-400 mt-1">
+                  <div className="text-[11px] text-slate-400 mt-1">
                     {payload.action === 'withdraw'
                       ? 'Retained fund balance'
                       : 'Out-of-pocket savings'}
@@ -915,20 +897,20 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
               </div>
 
               {/* 2) Goal Status Transition Badge */}
-              <div className="p-3 rounded-xl bg-[#131b2e] border border-[#1f293d] flex items-center justify-between">
-                <span className="text-xs text-gray-300">Goal Health Transition:</span>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <span className="text-xs text-slate-700 font-medium">Goal Health Transition:</span>
                 <div className="flex items-center gap-3 text-xs font-semibold">
-                  <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <span className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
                     {currentImpact.statusBefore}
                   </span>
-                  <span className="text-gray-400">→</span>
+                  <span className="text-slate-400">→</span>
                   <span
                     className={`px-2.5 py-1 rounded border ${
                       currentImpact.statusAfter === 'On track'
-                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                         : currentImpact.statusAfter === 'Slightly behind'
-                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                        : 'bg-red-500/20 text-red-400 border-red-500/30'
+                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                        : 'bg-rose-50 text-rose-800 border border-rose-200'
                     }`}
                   >
                     {currentImpact.statusAfter}
@@ -937,24 +919,24 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
               </div>
 
               {/* 3) Guardrailed Simulated AI Explanation */}
-              <div className="p-4 rounded-xl bg-[#141e33] border border-blue-500/20 space-y-2">
+              <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-blue-400">
-                    <Sparkles className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2 text-xs font-semibold text-blue-700">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                     <span>AI-generated wording</span>
                   </div>
                   {aiGenerating && (
-                    <span className="text-[10px] text-gray-400 animate-pulse">
+                    <span className="text-[10px] text-slate-500 animate-pulse font-medium">
                       Synthesizing insight...
                     </span>
                   )}
                 </div>
                 {aiAborted ? (
-                  <p className="text-xs text-amber-400 italic">
+                  <p className="text-xs text-amber-700 italic font-medium">
                     Detailed explanation unavailable, showing numbers only.
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-200 leading-relaxed font-sans">
+                  <p className="text-xs text-slate-800 leading-relaxed font-sans">
                     {aiText}
                   </p>
                 )}
@@ -962,7 +944,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
 
               {/* 4) 3 EQUAL-SIZE, EQUAL-WEIGHT ALTERNATIVE CARDS (All using current input/slider values) */}
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   Available Alternatives (Choose one to proceed)
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -972,23 +954,23 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                       setSelectedAlternative('keep');
                       setStep(3);
                     }}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between group ${
+                    className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between group shadow-xs ${
                       selectedAlternative === 'keep'
-                        ? 'bg-[#15233c] border-emerald-500'
-                        : 'bg-[#131d31] border-[#1f2e4d] hover:border-emerald-500/60'
+                        ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20'
+                        : 'bg-white border-slate-200 hover:border-emerald-400 hover:bg-slate-50'
                     }`}
                   >
                     <div>
-                      <div className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                      <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
                         {payload.action === 'withdraw' ? 'Keep invested' : 'Keep SIP active'}
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         Maintain baseline growth without compromising retirement goals.
                       </p>
                     </div>
-                    <div className="mt-4 pt-3 border-t border-gray-800 space-y-1 text-xs font-mono">
-                      <div className="text-emerald-400 font-semibold">Goal Delay: 0 months</div>
-                      <div className="text-gray-400">Value Lost: ₹0</div>
+                    <div className="mt-4 pt-3 border-t border-slate-100 space-y-1 text-xs font-mono">
+                      <div className="text-emerald-700 font-bold">Goal Delay: 0 months</div>
+                      <div className="text-slate-500">Value Lost: ₹0</div>
                     </div>
                   </div>
 
@@ -1002,24 +984,24 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                       }
                       setStep(3);
                     }}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between group relative ${
+                    className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between group relative shadow-xs ${
                       selectedAlternative === 'reduce' || selectedAlternative === 'withdraw_smaller'
-                        ? 'bg-[#15233c] border-emerald-500'
-                        : 'bg-[#131d31] border-[#1f2e4d] hover:border-emerald-500/60'
+                        ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20'
+                        : 'bg-white border-slate-200 hover:border-emerald-400 hover:bg-slate-50'
                     }`}
                   >
                     {(suggestedOptionKey === 'reduce' || suggestedOptionKey === 'withdraw_smaller') && (
-                      <span className="absolute -top-2.5 right-3 text-[10px] font-semibold bg-emerald-500 text-black px-2 py-0.5 rounded-full shadow">
+                      <span className="absolute -top-2.5 right-3 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-xs">
                         Suggested for you
                       </span>
                     )}
                     <div>
-                      <div className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                      <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
                         {payload.action === 'withdraw'
                           ? `Withdraw ${formatINR(withdrawAmount)}`
                           : `Reduce to ${formatINR(reducedAmount)}/mo`}
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         {payload.action === 'withdraw'
                           ? 'Withdraw the specified partial amount while preserving remaining balance.'
                           : reducePermanent
@@ -1027,11 +1009,11 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                           : `Reduce for ${reduceDurationMonths} months, then auto-restore.`}
                       </p>
                     </div>
-                    <div className="mt-4 pt-3 border-t border-gray-800 space-y-1 text-xs font-mono">
-                      <div className="text-amber-400 font-semibold">
+                    <div className="mt-4 pt-3 border-t border-slate-100 space-y-1 text-xs font-mono">
+                      <div className="text-amber-700 font-bold">
                         Goal Delay: +{formatMonths(alt2Impact.goalDelayMonths)}
                       </div>
-                      <div className="text-gray-400">
+                      <div className="text-slate-500">
                         Value Lost: {formatINR(alt2Impact.valueLost)}
                       </div>
                     </div>
@@ -1045,41 +1027,41 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                           setSelectedAlternative('use_cash');
                           setStep(3);
                         }}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between group relative ${
+                        className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between group relative shadow-xs ${
                           selectedAlternative === 'use_cash'
-                            ? 'bg-[#15233c] border-emerald-500'
-                            : 'bg-[#131d31] border-[#1f2e4d] hover:border-emerald-500/60'
+                            ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20'
+                            : 'bg-white border-slate-200 hover:border-emerald-400 hover:bg-slate-50'
                         }`}
                       >
                         {suggestedOptionKey === 'use_cash' && (
-                          <span className="absolute -top-2.5 right-3 text-[10px] font-semibold bg-emerald-500 text-black px-2 py-0.5 rounded-full shadow">
+                          <span className="absolute -top-2.5 right-3 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-xs">
                             Suggested for you
                           </span>
                         )}
                         <div>
-                          <div className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                          <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
                             Use available cash instead
                           </div>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-slate-500 mt-1">
                             Deploy {formatINR(withdrawAmount)} from your {formatINR(payload.availableCash)} cash reserve.
                           </p>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-gray-800 space-y-1 text-xs font-mono">
-                          <div className="text-emerald-400 font-semibold">Goal Delay: 0 months</div>
-                          <div className="text-gray-400">Value Lost: ₹0</div>
+                        <div className="mt-4 pt-3 border-t border-slate-100 space-y-1 text-xs font-mono">
+                          <div className="text-emerald-700 font-bold">Goal Delay: 0 months</div>
+                          <div className="text-slate-500">Value Lost: ₹0</div>
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 rounded-xl bg-[#101726] border border-gray-800 opacity-60 flex flex-col justify-between">
+                      <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 opacity-60 flex flex-col justify-between">
                         <div>
-                          <div className="text-sm font-semibold text-gray-400">
+                          <div className="text-sm font-semibold text-slate-500">
                             Use cash instead (Unavailable)
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-slate-400 mt-1">
                             Available cash ({formatINR(payload.availableCash)}) is lower than withdrawal request.
                           </p>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-gray-800 text-[11px] text-gray-500">
+                        <div className="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-400">
                           Cash balance insufficient
                         </div>
                       </div>
@@ -1090,30 +1072,30 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                         setSelectedAlternative('pause_autoresume');
                         setStep(3);
                       }}
-                      className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between group relative ${
+                      className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between group relative shadow-xs ${
                         selectedAlternative === 'pause_autoresume'
-                          ? 'bg-[#15233c] border-emerald-500'
-                          : 'bg-[#131d31] border-[#1f2e4d] hover:border-emerald-500/60'
+                          ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20'
+                          : 'bg-white border-slate-200 hover:border-emerald-400 hover:bg-slate-50'
                       }`}
                     >
                       {suggestedOptionKey === 'pause_autoresume' && (
-                        <span className="absolute -top-2.5 right-3 text-[10px] font-semibold bg-emerald-500 text-black px-2 py-0.5 rounded-full shadow">
+                        <span className="absolute -top-2.5 right-3 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-xs">
                           Suggested for you
                         </span>
                       )}
                       <div>
-                        <div className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
                           Pause with auto-resume ({pauseMonths} mo)
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                           Resumes automatically on {getResumeDateString(pauseMonths)}
                         </p>
                       </div>
-                      <div className="mt-4 pt-3 border-t border-gray-800 space-y-1 text-xs font-mono">
-                        <div className="text-amber-400 font-semibold">
+                      <div className="mt-4 pt-3 border-t border-slate-100 space-y-1 text-xs font-mono">
+                        <div className="text-amber-700 font-bold">
                           Goal Delay: +{formatMonths(alt3Impact.goalDelayMonths)}
                         </div>
-                        <div className="text-gray-400">
+                        <div className="text-slate-500">
                           Value Lost: {formatINR(alt3Impact.valueLost)}
                         </div>
                       </div>
@@ -1128,7 +1110,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                       setSelectedAlternative('custom');
                       setStep(3);
                     }}
-                    className="text-xs text-gray-400 hover:text-white underline underline-offset-4 decoration-gray-600 transition-colors"
+                    className="text-xs text-slate-500 hover:text-slate-800 underline underline-offset-4 decoration-slate-400 transition-colors font-medium"
                   >
                     {payload.action === 'withdraw'
                       ? 'Withdraw anyway'
@@ -1140,40 +1122,40 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
               {/* 5) Collapsible Chart & Dips Table Below Alternatives (Item 9) */}
               <div className="space-y-4 pt-2">
                 {/* Trajectory Chart: Collapsible, Zoomed to last 24 months, with gap label */}
-                <div className="border border-[#1f293d] rounded-xl bg-[#0f172a] overflow-hidden">
+                <div className="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setShowChartSection(!showChartSection)}
-                    className="w-full px-4 py-3 text-left flex items-center justify-between text-xs font-semibold text-gray-300 hover:bg-[#131c30]"
+                    className="w-full px-4 py-3 text-left flex items-center justify-between text-xs font-semibold text-slate-800 hover:bg-slate-100"
                   >
                     <span className="flex items-center gap-2">
-                      <LineChartIcon className="w-3.5 h-3.5 text-emerald-400" />
+                      <LineChartIcon className="w-3.5 h-3.5 text-emerald-600" />
                       Goal Trajectory: Last 24 Months Before Goal Date
-                      <span className="text-[10px] text-amber-400 font-mono">
+                      <span className="text-[10px] text-amber-700 font-mono font-medium">
                         (Gap at goal date: {formatShortINR(gapAtGoalDate)})
                       </span>
                     </span>
                     {showChartSection ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                      <ChevronUp className="w-4 h-4 text-slate-500" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                      <ChevronDown className="w-4 h-4 text-slate-500" />
                     )}
                   </button>
 
                   {showChartSection && (
-                    <div className="p-4 border-t border-[#1f293d] space-y-3">
+                    <div className="p-4 border-t border-slate-200 bg-white space-y-3">
                       <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-gray-400">
+                        <span className="text-slate-500">
                           Focusing on final 24 months (Month {Math.max(0, payload.goalMonthsLeft - 24)} to {payload.goalMonthsLeft})
                         </span>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 font-medium">
                           <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                            <span className="text-gray-300">If you stay</span>
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                            <span className="text-slate-700">If you stay</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                            <span className="text-gray-300">If you change</span>
+                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                            <span className="text-slate-700">If you change</span>
                           </div>
                         </div>
                       </div>
@@ -1186,31 +1168,32 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                           >
                             <XAxis
                               dataKey="month"
-                              stroke="#64748b"
+                              stroke="#94a3b8"
                               fontSize={10}
                               tickFormatter={(v) => `m${v}`}
                             />
                             <YAxis
-                              stroke="#64748b"
+                              stroke="#94a3b8"
                               fontSize={10}
                               tickFormatter={(v) => formatShortINR(v)}
                             />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: '#0f172a',
-                                borderColor: '#1e293b',
+                                backgroundColor: '#ffffff',
+                                borderColor: '#cbd5e1',
                                 borderRadius: '8px',
-                                fontSize: '11px'
+                                fontSize: '11px',
+                                color: '#0f172a'
                               }}
                               formatter={(val: any) => [formatShortINR(Number(val)), 'Corpus']}
                             />
                             <ReferenceLine
                               y={payload.goalTarget}
-                              stroke="#ef4444"
+                              stroke="#e11d48"
                               strokeDasharray="3 3"
                               label={{
                                 value: `Target: ${formatShortINR(payload.goalTarget)}`,
-                                fill: '#ef4444',
+                                fill: '#e11d48',
                                 fontSize: 10,
                                 position: 'top'
                               }}
@@ -1218,14 +1201,14 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                             <Line
                               type="monotone"
                               dataKey="corpusBefore"
-                              stroke="#00d09c"
+                              stroke="#059669"
                               strokeWidth={2}
                               dot={false}
                             />
                             <Line
                               type="monotone"
                               dataKey="corpusAfter"
-                              stroke="#f59e0b"
+                              stroke="#d97706"
                               strokeWidth={2}
                               strokeDasharray="4 4"
                               dot={false}
@@ -1239,52 +1222,52 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
 
                 {/* Market Worry Drawdown Reference Table (Collapsible) */}
                 {selectedReason === 'Market worry' && (
-                  <div className="border border-[#1f293d] rounded-xl bg-[#0f172a] overflow-hidden">
+                  <div className="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setShowDipsTable(!showDipsTable)}
-                      className="w-full px-4 py-3 text-left flex items-center justify-between text-xs font-semibold text-gray-300 hover:bg-[#131c30]"
+                      className="w-full px-4 py-3 text-left flex items-center justify-between text-xs font-semibold text-slate-800 hover:bg-slate-100"
                     >
                       <span className="flex items-center gap-1.5">
-                        <TrendingDown className="w-3.5 h-3.5 text-amber-400" />
+                        <TrendingDown className="w-3.5 h-3.5 text-amber-600" />
                         How past dips have played out (Historical drawdowns)
                       </span>
                       {showDipsTable ? (
-                        <ChevronUp className="w-4 h-4 text-gray-400" />
+                        <ChevronUp className="w-4 h-4 text-slate-500" />
                       ) : (
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                        <ChevronDown className="w-4 h-4 text-slate-500" />
                       )}
                     </button>
 
                     {showDipsTable && (
-                      <div className="p-4 border-t border-[#1f293d] space-y-2">
-                        <div className="text-[10px] text-gray-500 italic text-right">
+                      <div className="p-4 border-t border-slate-200 bg-white space-y-2">
+                        <div className="text-[10px] text-slate-500 italic text-right">
                           Illustrative sample data, not a forecast
                         </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-xs">
                             <thead>
-                              <tr className="text-gray-400 border-b border-gray-800">
+                              <tr className="text-slate-500 border-b border-slate-200">
                                 <th className="pb-2">Market Drawdown</th>
                                 <th className="pb-2">Historical Frequency</th>
                                 <th className="pb-2">Typical Recovery</th>
                               </tr>
                             </thead>
-                            <tbody className="text-gray-300 divide-y divide-gray-800/60 font-mono">
+                            <tbody className="text-slate-700 divide-y divide-slate-100 font-mono">
                               <tr>
-                                <td className="py-2 text-amber-400">-5% dip</td>
+                                <td className="py-2 text-amber-700 font-semibold">-5% dip</td>
                                 <td className="py-2">2–3 times / year</td>
-                                <td className="py-2 text-emerald-400">3–6 weeks</td>
+                                <td className="py-2 text-emerald-700 font-semibold">3–6 weeks</td>
                               </tr>
                               <tr>
-                                <td className="py-2 text-amber-400">-10% correction</td>
+                                <td className="py-2 text-amber-700 font-semibold">-10% correction</td>
                                 <td className="py-2">Once / 18 months</td>
-                                <td className="py-2 text-emerald-400">8–14 weeks</td>
+                                <td className="py-2 text-emerald-700 font-semibold">8–14 weeks</td>
                               </tr>
                               <tr>
-                                <td className="py-2 text-red-400">-15% bear move</td>
+                                <td className="py-2 text-rose-700 font-semibold">-15% bear move</td>
                                 <td className="py-2">Once / 3–4 years</td>
-                                <td className="py-2 text-emerald-400">18–28 weeks</td>
+                                <td className="py-2 text-emerald-700 font-semibold">18–28 weeks</td>
                               </tr>
                             </tbody>
                           </table>
@@ -1295,26 +1278,26 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                 )}
 
                 {/* "Why am I seeing this?" collapsible inspection panel */}
-                <div className="border border-[#1f293d] rounded-xl bg-[#0d1424] overflow-hidden">
+                <div className="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setShowWhyPanel(!showWhyPanel)}
-                    className="w-full px-4 py-3 text-left flex items-center justify-between text-xs font-semibold text-gray-300 hover:bg-[#121c30]"
+                    className="w-full px-4 py-3 text-left flex items-center justify-between text-xs font-semibold text-slate-800 hover:bg-slate-100"
                   >
                     <span className="flex items-center gap-2">
-                      <Sliders className="w-3.5 h-3.5 text-emerald-400" />
+                      <Sliders className="w-3.5 h-3.5 text-emerald-600" />
                       Why am I seeing this? (Deterministic calculation parameters)
                     </span>
                     {showWhyPanel ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                      <ChevronUp className="w-4 h-4 text-slate-500" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                      <ChevronDown className="w-4 h-4 text-slate-500" />
                     )}
                   </button>
                   {showWhyPanel && (
-                    <div className="p-4 border-t border-[#1f293d] space-y-3 text-xs text-gray-300 bg-[#0a0f1d]">
+                    <div className="p-4 border-t border-slate-200 space-y-3 text-xs text-slate-700 bg-white">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Assumed Annual Return:</span>
+                        <span className="text-slate-600 font-medium">Assumed Annual Return:</span>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
@@ -1322,18 +1305,18 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                             max={30}
                             value={assumedRate}
                             onChange={(e) => setAssumedRate(Number(e.target.value))}
-                            className="w-16 px-2 py-0.5 bg-gray-900 border border-gray-700 rounded text-right font-mono"
+                            className="w-16 px-2 py-0.5 bg-slate-50 border border-slate-300 rounded text-right font-mono text-slate-900"
                           />
-                          <span>% p.a.</span>
+                          <span className="font-medium text-slate-700">% p.a.</span>
                         </div>
                       </div>
-                      <div className="space-y-1 font-mono text-[11px] text-gray-400">
+                      <div className="space-y-1 font-mono text-[11px] text-slate-600">
                         <p>Monthly rate: r = (1 + {assumedRate}%)^(1/12) - 1</p>
                         <p>Goal Months Left (n): {payload.goalMonthsLeft}</p>
                         <p>Corpus Base: {formatINR(payload.goalCorpus)}</p>
                         <p>Formula: Σ a * (1+r)^(n-k) strictly evaluated</p>
                       </div>
-                      <p className="text-[11px] text-gray-500 italic">
+                      <p className="text-[11px] text-slate-500 italic">
                         AI wording only; every number comes from a fixed deterministic calculation.
                       </p>
                     </div>
@@ -1341,7 +1324,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                 </div>
 
                 {/* Disclaimer */}
-                <div className="text-[11px] text-gray-500 leading-normal">
+                <div className="text-[11px] text-slate-500 leading-normal">
                   Educational estimate, not investment advice. Returns are not guaranteed. You stay in control.
                   {payload.action === 'withdraw' &&
                     ' Exit load or tax may apply; check your fund details.'}
@@ -1353,23 +1336,23 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
           {/* STEP 3: CONFIRM (Item 1: Must show goal delay, value lost & status for option actually selected) */}
           {step === 3 && (
             <div className="space-y-6">
-              <div className="p-4 rounded-xl bg-[#0f172a] border border-[#1f293d] space-y-4">
-                <h4 className="text-sm font-semibold text-white">Review Your Choice</h4>
-                <div className="divide-y divide-gray-800 text-xs">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-4 shadow-xs">
+                <h4 className="text-sm font-bold text-slate-900">Review Your Choice</h4>
+                <div className="divide-y divide-slate-200 text-xs">
                   <div className="py-2.5 flex justify-between">
-                    <span className="text-gray-400">Selected Decision:</span>
-                    <span className="font-semibold text-emerald-400">
+                    <span className="text-slate-500 font-medium">Selected Decision:</span>
+                    <span className="font-bold text-emerald-800 text-right">
                       {selectedAlternative === 'keep' && 'Keep investment active'}
                       {selectedAlternative === 'reduce' &&
                         `Reduce SIP to ${formatINR(reducedAmount)}/mo ${
                           reducePermanent
                             ? '(Permanent)'
-                            : `for ${reduceDurationMonths} months (auto-restore on ${getResumeDateString(
+                            : `for ${formatMonths(reduceDurationMonths)} (auto-restore on ${getResumeDateString(
                                 reduceDurationMonths
                               )})`
                         }`}
                       {selectedAlternative === 'pause_autoresume' &&
-                        `Pause for ${pauseMonths} months (auto-resumes on ${getResumeDateString(
+                        `Pause for ${formatMonths(pauseMonths)} (auto-resumes on ${getResumeDateString(
                           pauseMonths
                         )})`}
                       {selectedAlternative === 'use_cash' &&
@@ -1379,35 +1362,49 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                       {selectedAlternative === 'custom' &&
                         (payload.action === 'withdraw'
                           ? `Withdraw ${formatINR(withdrawAmount)}`
-                          : `Pause for ${pauseMonths} months (manual resume)`)}
+                          : `Pause for ${formatMonths(pauseMonths)} (manual resume)`)}
                     </span>
                   </div>
+                  {selectedAlternative === 'use_cash' && (
+                    <>
+                      <div className="py-2.5 flex justify-between">
+                        <span className="text-slate-500 font-medium">Withdrawal:</span>
+                        <span className="text-emerald-700 font-semibold">cancelled</span>
+                      </div>
+                      <div className="py-2.5 flex justify-between">
+                        <span className="text-slate-500 font-medium">Cash balance after:</span>
+                        <span className="text-slate-900 font-mono font-bold">
+                          {formatINR(Math.max(0, payload.availableCash - withdrawAmount))}
+                        </span>
+                      </div>
+                    </>
+                  )}
                   <div className="py-2.5 flex justify-between">
-                    <span className="text-gray-400">Reason Category:</span>
-                    <span className="text-white font-medium">{selectedReason}</span>
+                    <span className="text-slate-500 font-medium">Reason Category:</span>
+                    <span className="text-slate-900 font-semibold">{selectedReason}</span>
                   </div>
                   <div className="py-2.5 flex justify-between">
-                    <span className="text-gray-400">Goal Delay:</span>
-                    <span className="text-amber-400 font-mono font-semibold">
+                    <span className="text-slate-500 font-medium">Goal Delay:</span>
+                    <span className="text-amber-700 font-mono font-bold">
                       +{formatMonths(selectedImpact.goalDelayMonths)}
                     </span>
                   </div>
                   <div className="py-2.5 flex justify-between">
-                    <span className="text-gray-400">Estimated Value Lost:</span>
-                    <span className="text-red-400 font-mono font-semibold">
+                    <span className="text-slate-500 font-medium">Estimated Value Lost:</span>
+                    <span className="text-rose-700 font-mono font-bold">
                       {formatINR(selectedImpact.valueLost)}
                     </span>
                   </div>
                   <div className="py-2.5 flex justify-between">
-                    <span className="text-gray-400">Goal Status Impact:</span>
-                    <span className="text-white font-semibold">
+                    <span className="text-slate-500 font-medium">Goal Status Impact:</span>
+                    <span className="text-slate-900 font-bold">
                       {selectedImpact.statusBefore} → {selectedImpact.statusAfter}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-800/40 text-xs text-emerald-300">
+              <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium">
                 Nothing changes until you select Done. ApexBroker will execute your choice.
               </div>
 
@@ -1416,7 +1413,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white transition-colors"
+                  className="px-4 py-2 rounded-xl text-xs text-slate-500 hover:text-slate-800 font-semibold transition-colors"
                 >
                   ← Back to Impact
                 </button>
@@ -1424,17 +1421,17 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white transition-colors"
+                    className="px-4 py-2 rounded-xl text-xs text-slate-500 hover:text-slate-800 font-semibold transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     disabled={!isInputValid()}
                     onClick={handleConfirmDecision}
-                    className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
                       isInputValid()
-                        ? 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-lg shadow-emerald-500/20'
-                        : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     }`}
                   >
                     Done
@@ -1446,9 +1443,9 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3 bg-[#0a0f1d] border-t border-[#1f293d] flex items-center justify-between text-xs text-gray-500">
+        <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
           <span>Esc to exit without changes</span>
-          <span className="font-semibold tracking-wider text-gray-400">
+          <span className="font-semibold tracking-wider text-slate-700">
             Powered by FinPilot
           </span>
         </div>

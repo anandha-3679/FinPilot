@@ -14,6 +14,7 @@ import {
 import { useAppStore } from './state/store';
 import { Landing } from './landing/Landing';
 import { DashboardTab } from './host/DashboardTab';
+import { MarketsTab } from './host/MarketsTab';
 import { PortfolioTab } from './host/PortfolioTab';
 import { SIPsTab } from './host/SIPsTab';
 import { GoalsTab } from './host/GoalsTab';
@@ -21,6 +22,7 @@ import { ActivityTab } from './host/ActivityTab';
 import { AddInvestmentDialog } from './host/AddInvestmentDialog';
 import { FinPilotModal, FinPilotPayload, FinPilotDecision } from './finpilot/FinPilotModal';
 import { HiddenDemoPanel } from './host/HiddenDemoPanel';
+import { CompassLogo } from './finpilot/CompassLogo';
 import { Holding, SIP } from './data/seed';
 
 export function App() {
@@ -38,7 +40,7 @@ export function App() {
 
   // Navigation State: 'landing' or host tabs
   const [currentView, setCurrentView] = useState<'landing' | 'app'>('landing');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'sips' | 'goals' | 'activity'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'markets' | 'portfolio' | 'sips' | 'goals' | 'activity'>('dashboard');
 
   // Modals & Panels
   const [showDemoBanner, setShowDemoBanner] = useState<boolean>(true);
@@ -158,9 +160,9 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070b13] text-gray-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
       {/* Host App Header (ApexBroker) */}
-      <header className="sticky top-0 z-30 bg-[#090e1a]/90 backdrop-blur-md border-b border-[#162033]">
+      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             {/* Logo */}
@@ -168,17 +170,18 @@ export function App() {
               onClick={() => setCurrentView('landing')}
               className="flex items-center gap-2.5 cursor-pointer group"
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-black font-extrabold text-sm shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
                 A
               </div>
-              <span className="font-bold text-base text-white tracking-tight">ApexBroker</span>
+              <span className="font-bold text-base text-slate-900 tracking-tight">ApexBroker</span>
             </div>
 
             {/* Main Tabs Navigation */}
-            <nav className="hidden md:flex items-center gap-1 p-1 bg-[#0f172a] border border-[#1e293b] rounded-xl text-xs font-semibold">
+            <nav className="hidden md:flex items-center gap-1 p-1 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold">
               {(
                 [
                   { id: 'dashboard', label: 'Dashboard' },
+                  { id: 'markets', label: 'Markets' },
                   { id: 'portfolio', label: 'Portfolio' },
                   { id: 'sips', label: 'SIPs' },
                   { id: 'goals', label: 'Goals' },
@@ -190,8 +193,8 @@ export function App() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-3.5 py-1.5 rounded-lg transition-all ${
                     activeTab === tab.id
-                      ? 'bg-emerald-500 text-black shadow'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-white text-emerald-700 shadow-sm border border-slate-200/80 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
                 >
                   {tab.label}
@@ -206,12 +209,12 @@ export function App() {
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 rounded-xl bg-[#0f172a] border border-[#1e293b] text-gray-300 hover:text-white hover:border-gray-700 transition-colors relative"
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-colors relative shadow-xs"
                 title="Notifications & 30-day Check-ins"
               >
                 <Bell className="w-4 h-4" />
                 {state.checkIns.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-black text-[10px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
                     {state.checkIns.length}
                   </span>
                 )}
@@ -219,28 +222,28 @@ export function App() {
 
               {/* Notification Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-[#0d1424] border border-[#1f293d] rounded-2xl shadow-2xl p-4 text-xs space-y-3 z-40 animate-fade-in">
-                  <div className="flex items-center justify-between pb-2 border-b border-gray-800">
-                    <span className="font-bold text-white">Scheduled Check-ins</span>
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 text-xs space-y-3 z-40 animate-fade-in">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <span className="font-bold text-slate-900">Scheduled Check-ins</span>
                     <button
                       onClick={() => setShowNotifications(false)}
-                      className="text-gray-400 hover:text-white"
+                      className="text-slate-400 hover:text-slate-600"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                   {state.checkIns.length === 0 ? (
-                    <p className="text-gray-500 py-2">No pending notifications.</p>
+                    <p className="text-slate-500 py-2">No pending notifications.</p>
                   ) : (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {state.checkIns.map((chk) => (
                         <div
                           key={chk.id}
-                          className="p-2.5 rounded-xl bg-[#121c2e] border border-[#1f2d48] space-y-1"
+                          className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1"
                         >
-                          <div className="font-semibold text-white">{chk.title}</div>
-                          <div className="text-gray-400 text-[11px]">{chk.description}</div>
-                          <div className="text-[10px] text-emerald-400 font-mono">
+                          <div className="font-semibold text-slate-900">{chk.title}</div>
+                          <div className="text-slate-600 text-[11px]">{chk.description}</div>
+                          <div className="text-[10px] text-emerald-700 font-mono font-medium">
                             Scheduled: {chk.date}
                           </div>
                         </div>
@@ -255,28 +258,28 @@ export function App() {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 p-1.5 pl-3 rounded-xl bg-[#0f172a] border border-[#1e293b] hover:border-gray-700 transition-colors text-xs text-left"
+                className="flex items-center gap-2 p-1.5 pl-3 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors text-xs text-left shadow-xs"
               >
-                <span className="hidden sm:inline font-semibold text-white">Aarav Mehta</span>
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                <span className="hidden sm:inline font-semibold text-slate-900">Aarav Mehta</span>
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
                   AM
                 </div>
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-52 bg-[#0d1424] border border-[#1f293d] rounded-2xl shadow-2xl p-2 text-xs z-40 animate-fade-in space-y-1">
-                  <div className="px-3 py-2 border-b border-gray-800">
-                    <div className="font-bold text-white">Aarav Mehta</div>
-                    <div className="text-gray-400 font-mono text-[11px]">ID: u_4821</div>
+                <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 text-xs z-40 animate-fade-in space-y-1">
+                  <div className="px-3 py-2 border-b border-slate-100">
+                    <div className="font-bold text-slate-900">Aarav Mehta</div>
+                    <div className="text-slate-500 font-mono text-[11px]">ID: u_4821</div>
                   </div>
                   <button
                     onClick={() => {
                       resetDemo();
                       setShowUserMenu(false);
                     }}
-                    className="w-full text-left px-3 py-2 rounded-xl text-gray-300 hover:bg-[#152033] hover:text-white flex items-center gap-2 transition-colors"
+                    className="w-full text-left px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2 transition-colors"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
                     Reset demo data
                   </button>
                   <button
@@ -284,7 +287,7 @@ export function App() {
                       setCurrentView('landing');
                       setShowUserMenu(false);
                     }}
-                    className="w-full text-left px-3 py-2 rounded-xl text-red-400 hover:bg-red-950/30 flex items-center gap-2 transition-colors"
+                    className="w-full text-left px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Exit demo
@@ -298,17 +301,17 @@ export function App() {
 
       {/* Dismissible Demo Guidance Banner */}
       {showDemoBanner && (
-        <div className="bg-gradient-to-r from-emerald-950/70 via-[#0d1e2e] to-blue-950/60 border-b border-emerald-500/20 px-6 py-2.5 text-xs">
+        <div className="bg-emerald-50 border-b border-emerald-200/80 px-6 py-2.5 text-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-emerald-500 text-black font-bold text-[10px] uppercase">
+              <span className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider">
                 Demo Account
               </span>
-              <span className="text-gray-200">
+              <span className="text-slate-700">
                 Sample account with pre-loaded portfolio data. Try{' '}
                 <strong
                   onClick={() => setActiveTab('sips')}
-                  className="text-emerald-400 cursor-pointer underline underline-offset-2"
+                  className="text-emerald-700 hover:text-emerald-800 cursor-pointer underline underline-offset-2"
                 >
                   SIPs → Pause SIP on UTI Nifty 50
                 </strong>{' '}
@@ -317,7 +320,7 @@ export function App() {
             </div>
             <button
               onClick={() => setShowDemoBanner(false)}
-              className="text-gray-400 hover:text-white shrink-0"
+              className="text-slate-400 hover:text-slate-700 shrink-0"
               title="Dismiss"
             >
               <X className="w-4 h-4" />
@@ -340,6 +343,14 @@ export function App() {
               setAddInvestOpen(true);
             }}
             onNavigateToTab={(t) => setActiveTab(t)}
+          />
+        )}
+
+        {activeTab === 'markets' && (
+          <MarketsTab
+            marketMode={state.marketMode}
+            onSetMarketMode={setMarketMode}
+            holdings={state.holdings}
           />
         )}
 
@@ -415,13 +426,13 @@ export function App() {
         {state.toasts.map((toast) => (
           <div
             key={toast.id}
-            className="p-3 px-4 rounded-xl bg-[#0f172a] border border-emerald-500/40 text-xs text-white shadow-2xl flex items-center gap-2 pointer-events-auto animate-fade-in"
+            className="p-3 px-4 rounded-xl bg-white border border-emerald-300 text-xs text-slate-900 shadow-xl flex items-center gap-2 pointer-events-auto animate-fade-in"
           >
-            <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{toast.message}</span>
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-gray-400 hover:text-white ml-2"
+              className="text-slate-400 hover:text-slate-600 ml-2"
             >
               <X className="w-3.5 h-3.5" />
             </button>

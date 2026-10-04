@@ -2,17 +2,17 @@
 
 @layer base {
   :root {
-    --color-bg-primary: #0a0e17;
-    --color-bg-secondary: #111827;
-    --color-bg-card: #151d2e;
-    --color-border: #1f293d;
-    --color-accent: #00d09c;
-    --color-accent-hover: #00b386;
+    --color-bg-primary: #f8fafc;
+    --color-bg-secondary: #ffffff;
+    --color-bg-card: #ffffff;
+    --color-border: #e2e8f0;
+    --color-accent: #059669;
+    --color-accent-hover: #047857;
   }
 
   body {
-    background-color: #0a0e17;
-    color: #f1f5f9;
+    background-color: #f8fafc;
+    color: #0f172a;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
@@ -24,33 +24,33 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Dark theme scrollbar */
+/* Bright theme scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b0f19;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #94a3b8;
 }
 
-/* Dark-themed native inputs/checkboxes */
+/* Clean native inputs/checkboxes */
 input[type="checkbox"] {
-  accent-color: #00d09c;
-  background-color: #0f172a;
-  border-color: #334155;
-  color-scheme: dark;
+  accent-color: #059669;
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color-scheme: light;
 }
 
 input[type="range"] {
-  accent-color: #00d09c;
+  accent-color: #059669;
 }

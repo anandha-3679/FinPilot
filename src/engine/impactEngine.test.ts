@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateImpact, simulate, monthsToTarget } from './impactEngine';
+import { buildExplanationText, formatShortINR, formatMonths, formatINR } from './format';
 
 describe('FinPilot Impact Engine - Comprehensive Unit Tests', () => {
   // Early Retirement: target ₹1,20,00,000, corpus ₹7,22,000, ₹15,000/mo, n=193
@@ -296,5 +297,70 @@ describe('FinPilot Impact Engine - Comprehensive Unit Tests', () => {
     });
     expect(zeroWithdraw.valueLost).toBe(0);
     expect(zeroWithdraw.goalDelayMonths).toBe(0);
+  });
+
+  it('Requirement 6: no explanation string contains "₹₹", " k ", or "1 months"', () => {
+    // Generate explanation strings across combinations of actions, durations, amounts, reasons
+    const sampleActions: ('pause' | 'reduce' | 'withdraw')[] = ['pause', 'reduce', 'withdraw'];
+    const sampleMonths = [1, 2, 3, 6, 12, 24];
+    const sampleAmounts = [5000, 10000, 50000, 91000, 100000, 180000, 12000000];
+    const sampleReasons = [undefined, 'Market worry', 'Temporary cash need', 'Emergency'];
+    const sampleModes: ('Calm' | 'Volatile')[] = ['Calm', 'Volatile'];
+
+    const explanations: string[] = [];
+
+    for (const action of sampleActions) {
+      for (const m of sampleMonths) {
+        for (const amt of sampleAmounts) {
+          for (const reason of sampleReasons) {
+            for (const mode of sampleModes) {
+              const text = buildExplanationText({
+                action,
+                amount: amt,
+                pauseMonths: m,
+                reducedAmount: Math.max(500, amt - 1000),
+                reduceDurationMonths: m,
+                reducePermanent: false,
+                withdrawAmount: Math.min(amt, 50000),
+                contributionsMissed: amt * m,
+                valueLost: amt * 1.5,
+                goalDelayMonths: m > 1 ? m : 1,
+                goalName: 'Early Retirement',
+                goalMonthsLeft: 193,
+                selectedReason: reason,
+                marketMode: mode
+              });
+              explanations.push(text);
+            }
+          }
+        }
+      }
+    }
+
+    expect(explanations.length).toBeGreaterThan(50);
+
+    for (const text of explanations) {
+      expect(text).not.toContain('₹₹');
+      expect(text).not.toMatch(/\bk\b/i);
+      expect(text).not.toContain(' k ');
+      expect(text).not.toContain('1 months');
+    }
+  });
+
+  it('Indian units in formatShortINR: formats 91000, 1.8 lakh, 1.2 crore and never uses k', () => {
+    expect(formatShortINR(91000)).toBe('about ₹0.9 lakh');
+    expect(formatShortINR(180000)).toBe('₹1.8 lakh');
+    expect(formatShortINR(12000000)).toBe('₹1.2 crore');
+    expect(formatShortINR(5000)).toBe('₹5,000');
+    expect(formatShortINR(91000)).not.toMatch(/\d+k\b/i);
+    expect(formatShortINR(50000)).not.toMatch(/\d+k\b/i);
+    expect(formatShortINR(91000)).not.toContain(' k ');
+  });
+
+  it('Pluralisation in formatMonths: 1 month vs 2 months', () => {
+    expect(formatMonths(1)).toBe('1 month');
+    expect(formatMonths(2)).toBe('2 months');
+    expect(formatMonths(3)).toBe('3 months');
+    expect(formatMonths(1)).not.toBe('1 months');
   });
 });

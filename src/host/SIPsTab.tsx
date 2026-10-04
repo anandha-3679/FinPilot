@@ -24,14 +24,14 @@ export const SIPsTab: React.FC<SIPsTabProps> = ({
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Systematic Investment Plans (SIPs)</h1>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Systematic Investment Plans (SIPs)</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
             Active mandates, monthly contributions, and flexible pause/reduce management
           </p>
         </div>
-        <div className="p-3 rounded-xl bg-[#121826] border border-[#1e293b] flex items-center gap-3">
-          <div className="text-xs text-gray-400">Total Monthly SIP:</div>
-          <div className="text-base font-bold font-mono text-emerald-400">
+        <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-3">
+          <div className="text-xs text-slate-500 font-medium">Total Monthly SIP:</div>
+          <div className="text-base font-bold font-mono text-emerald-700">
             {formatINR(totalMonthly)}/mo
           </div>
         </div>
@@ -42,43 +42,43 @@ export const SIPsTab: React.FC<SIPsTabProps> = ({
         {sips.map((sip) => (
           <div
             key={sip.id}
-            className="p-5 rounded-2xl bg-[#121826] border border-[#1e293b] flex flex-col justify-between space-y-4 hover:border-gray-700 transition-all"
+            className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between space-y-4 hover:border-slate-300 hover:shadow-sm transition-all"
           >
             <div>
               <div className="flex items-center justify-between">
                 <span
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold border ${
                     sip.status === 'Active'
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
                   }`}
                 >
                   {sip.status === 'Paused' && sip.pausedUntil
                     ? `Paused until ${sip.pausedUntil} · auto-resumes`
                     : sip.status}
                 </span>
-                <span className="text-[11px] text-gray-400 font-mono">
+                <span className="text-[11px] text-slate-500 font-mono">
                   {sip.status === 'Active' ? `Next debit: ${sip.nextDebit}` : 'Debit suspended'}
                 </span>
               </div>
 
-              <h3 className="text-base font-bold text-white mt-3 leading-snug">
+              <h3 className="text-base font-bold text-slate-900 mt-3 leading-snug">
                 {sip.fundName}
               </h3>
-              <div className="text-xs text-gray-400 mt-1">
-                Linked goal: <span className="text-gray-200 font-medium">{sip.linkedGoal}</span>
+              <div className="text-xs text-slate-500 mt-1">
+                Linked goal: <span className="text-slate-800 font-semibold">{sip.linkedGoal}</span>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-gray-800 grid grid-cols-2 gap-2 text-xs">
+              <div className="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <div className="text-gray-400">Monthly Amount</div>
-                  <div className="text-base font-bold font-mono text-white mt-0.5">
+                  <div className="text-slate-500 font-medium">Monthly Amount</div>
+                  <div className="text-base font-bold font-mono text-slate-900 mt-0.5">
                     {formatINR(sip.amount)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-400">Total Invested</div>
-                  <div className="text-base font-bold font-mono text-gray-300 mt-0.5">
+                  <div className="text-slate-500 font-medium">Total Invested</div>
+                  <div className="text-base font-bold font-mono text-slate-700 mt-0.5">
                     {formatINR(sip.totalInvested)}
                   </div>
                 </div>
@@ -86,11 +86,11 @@ export const SIPsTab: React.FC<SIPsTabProps> = ({
             </div>
 
             {/* Action Buttons for SIP */}
-            <div className="pt-2 border-t border-gray-800/80">
+            <div className="pt-2 border-t border-slate-100">
               {sip.status === 'Paused' ? (
                 <button
                   onClick={() => onResumeSIP(sip.id)}
-                  className="w-full py-2.5 rounded-xl bg-emerald-500 text-black font-semibold text-xs hover:bg-emerald-400 flex items-center justify-center gap-1.5 transition-all shadow"
+                  className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs hover:bg-emerald-700 flex items-center justify-center gap-1.5 transition-all shadow-xs"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   Resume SIP
@@ -99,14 +99,14 @@ export const SIPsTab: React.FC<SIPsTabProps> = ({
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => onOpenPauseFinPilot(sip)}
-                    className="py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500 hover:text-black font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
+                    className="py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-600 hover:text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs"
                   >
                     <Pause className="w-3.5 h-3.5" />
                     Pause SIP
                   </button>
                   <button
                     onClick={() => onOpenReduceFinPilot(sip)}
-                    className="py-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500 hover:text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
+                    className="py-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-600 hover:text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs"
                   >
                     <Sliders className="w-3.5 h-3.5" />
                     Reduce SIP

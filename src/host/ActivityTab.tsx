@@ -21,20 +21,20 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Activity & Intelligence</h1>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Activity & Intelligence</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
             Audit logs, 30-day scheduled check-ins, and user Decision Memory records
           </p>
         </div>
 
         {/* Sub-tab pills */}
-        <div className="flex items-center p-1 bg-[#121826] border border-[#1e293b] rounded-xl text-xs font-semibold self-start md:self-auto">
+        <div className="flex items-center p-1 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold self-start md:self-auto">
           <button
             onClick={() => setSubTab('memory')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               subTab === 'memory'
-                ? 'bg-emerald-500 text-black shadow'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-white text-emerald-700 shadow-xs border border-slate-200/80 font-bold'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Decision Memory ({decisions.length})
@@ -43,8 +43,8 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
             onClick={() => setSubTab('checkins')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               subTab === 'checkins'
-                ? 'bg-emerald-500 text-black shadow'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-white text-emerald-700 shadow-xs border border-slate-200/80 font-bold'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             30-day Check-ins ({checkIns.length})
@@ -53,8 +53,8 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
             onClick={() => setSubTab('transactions')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               subTab === 'transactions'
-                ? 'bg-emerald-500 text-black shadow'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-white text-emerald-700 shadow-xs border border-slate-200/80 font-bold'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Transaction Log ({activities.length})
@@ -65,8 +65,8 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
       {/* Subtab 1: Decision Memory Records */}
       {subTab === 'memory' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-[#0f172a] border border-[#1e293b] text-xs text-gray-300">
-            <span className="font-semibold text-emerald-400">About Decision Memory:</span> When you
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
+            <span className="font-semibold text-emerald-800">About Decision Memory:</span> When you
             confirm a choice with memory enabled, FinPilot tracks the context and monitors the
             actual market outcome to guide your next decision loop.
           </div>
@@ -75,33 +75,33 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
             {decisions.map((dec) => (
               <div
                 key={dec.id}
-                className="p-5 rounded-2xl bg-[#121826] border border-[#1e293b] flex flex-col justify-between space-y-4 hover:border-gray-700 transition-all"
+                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between space-y-4 hover:border-slate-300 transition-all"
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                       {dec.reasonCategory}
                     </span>
-                    <span className="text-xs font-mono text-gray-400">{dec.date}</span>
+                    <span className="text-xs font-mono text-slate-500">{dec.date}</span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-white mt-3">{dec.action}</h3>
-                  <div className="text-xs text-gray-400 mt-0.5 font-mono">
+                  <h3 className="text-sm font-bold text-slate-900 mt-3">{dec.action}</h3>
+                  <div className="text-xs text-slate-500 mt-0.5 font-mono">
                     Amount / Duration: {dec.durationOrAmount}
                   </div>
 
-                  <div className="mt-3 p-3 rounded-xl bg-[#0d1424] border border-[#1f2d48] text-xs text-gray-300">
-                    <div className="text-[10px] uppercase font-semibold tracking-wider text-gray-400 mb-1">
+                  <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">
                       Recorded Outcome
                     </div>
                     {dec.outcome}
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-gray-800 flex justify-end">
+                <div className="pt-2 border-t border-slate-100 flex justify-end">
                   <button
                     onClick={() => onDeleteDecision(dec.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-950/40 border border-transparent hover:border-red-900/50 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors font-medium"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Delete Record
@@ -116,8 +116,8 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
       {/* Subtab 2: 30-Day Check-Ins */}
       {subTab === 'checkins' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-[#0f172a] border border-[#1e293b] text-xs text-gray-300">
-            <span className="font-semibold text-emerald-400">Scheduled Check-ins:</span> Proactive
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
+            <span className="font-semibold text-emerald-800">Scheduled Check-ins:</span> Proactive
             prompts scheduled 30 days after pauses or withdrawals to review habit resumption.
           </div>
 
@@ -125,18 +125,18 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
             {checkIns.map((chk) => (
               <div
                 key={chk.id}
-                className="p-4 rounded-xl bg-[#121826] border border-[#1e293b] flex items-center justify-between"
+                className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0 mt-0.5">
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-white">{chk.title}</h4>
-                    <p className="text-xs text-gray-400 mt-0.5">{chk.description}</p>
+                    <h4 className="text-sm font-bold text-slate-900">{chk.title}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">{chk.description}</p>
                   </div>
                 </div>
-                <div className="text-right shrink-0 font-mono text-xs text-gray-400">
+                <div className="text-right shrink-0 font-mono text-xs text-slate-500">
                   {chk.date}
                 </div>
               </div>
@@ -147,21 +147,21 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
 
       {/* Subtab 3: Transaction Log */}
       {subTab === 'transactions' && (
-        <div className="rounded-2xl bg-[#121826] border border-[#1e293b] overflow-hidden">
-          <div className="p-4 border-b border-[#1e293b]">
-            <h3 className="text-sm font-semibold text-white">Full Platform Audit Log</h3>
+        <div className="rounded-2xl bg-white border border-slate-200 shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-900">Full Platform Audit Log</h3>
           </div>
-          <div className="divide-y divide-[#1a2336] text-xs">
+          <div className="divide-y divide-slate-100 text-xs">
             {activities.map((act) => (
               <div
                 key={act.id}
-                className="p-4 flex items-center justify-between hover:bg-[#161f33]/40 transition-colors"
+                className="p-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors"
               >
                 <div>
-                  <div className="font-semibold text-white">{act.title}</div>
-                  <div className="text-gray-400 text-[11px] mt-0.5">{act.description}</div>
+                  <div className="font-semibold text-slate-900">{act.title}</div>
+                  <div className="text-slate-500 text-[11px] mt-0.5">{act.description}</div>
                 </div>
-                <div className="text-right font-mono text-gray-400">{act.date}</div>
+                <div className="text-right font-mono text-slate-500 text-xs shrink-0 ml-4">{act.date}</div>
               </div>
             ))}
           </div>
