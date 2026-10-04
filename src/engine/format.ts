@@ -58,6 +58,20 @@ export function formatShortINR(value: number): string {
   return isNegative ? `-${formatted}` : formatted;
 }
 
+export type ActionCategory = 'pause' | 'reduce' | 'withdraw' | 'keep' | 'other';
+
+/**
+ * Normalises a decision record action string or type into an ActionCategory
+ */
+export function getDecisionActionCategory(actionStr: string): ActionCategory {
+  const lower = actionStr.toLowerCase();
+  if (lower.startsWith('pause')) return 'pause';
+  if (lower.startsWith('reduce')) return 'reduce';
+  if (lower.startsWith('withdr') || lower.includes('withdrew') || lower.includes('cash reserve')) return 'withdraw';
+  if (lower.startsWith('keep') || lower.startsWith('decided to keep')) return 'keep';
+  return 'other';
+}
+
 /**
  * Re-formats any ungrouped ₹ amounts (e.g. "₹50000", "₹50,000") in text with Indian grouping.
  */
@@ -141,7 +155,7 @@ export function buildExplanationText(params: ExplanationParams): string {
       contributionsMissed
     )} less invested. By ${goalDate}, that could mean ${formatShortINR(
       valueLost
-    )} less, and ${goalName} could be reached ${delayDesc}. Based on ${formatMonths(goalMonthsLeft)} to go and an assumed ${assumedRate}% a year.`;
+    )} less, and ${goalName} could be reached ${delayDesc}. Based on ${goalMonthsLeft} months (${formatMonths(goalMonthsLeft)}) to go and an assumed ${assumedRate}% a year.`;
   } else if (action === 'reduce') {
     const durText = reducePermanent ? 'permanently' : `for ${formatMonths(reduceDurationMonths)}`;
     const delayDesc = goalDelayMonths > 0 ? `delaying ${goalName} by ${delayText}.` : `keeping ${goalName} on schedule.`;
@@ -149,12 +163,12 @@ export function buildExplanationText(params: ExplanationParams): string {
       contributionsMissed
     )} less. By ${goalDate}, that could result in ${formatShortINR(
       valueLost
-    )} lower corpus, ${delayDesc}`;
+    )} lower corpus, ${delayDesc} Based on ${goalMonthsLeft} months (${formatMonths(goalMonthsLeft)}) to go and an assumed ${assumedRate}% a year.`;
   } else {
     const delayDesc = goalDelayMonths > 0 ? `delay ${goalName} by ${delayText}.` : `no delay to ${goalName}.`;
     targetText = `Withdrawing ${formatINR(withdrawAmount)} could mean ${formatShortINR(
       valueLost
-    )} less at the goal date and ${delayDesc}`;
+    )} less by ${goalDate} and ${delayDesc} Based on ${goalMonthsLeft} months (${formatMonths(goalMonthsLeft)}) to go and an assumed ${assumedRate}% a year.`;
   }
 
   if (selectedReason === 'Market worry') {
@@ -166,4 +180,94 @@ export function buildExplanationText(params: ExplanationParams): string {
   }
 
   return targetText;
+}
+
+export interface SuggestedPlanParams {
+  currentAction: 'pause' | 'reduce' | 'withdraw';
+  matchedActionStr: string;
+  matchedReason: string;
+  matchedOutcome?: string;
+  availableCash?: number;
+  withdrawAmount?: number;
+}
+
+/**
+ * Generates a tailored suggested plan for the CURRENT action (pause / reduce / withdraw)
+ * based on the past decision record and context.
+ */
+export function buildSuggestedPlan(params: SuggestedPlanParams): string {
+  const {
+    currentAction,
+    matchedActionStr,
+    matchedReason,
+    matchedOutcome = '',
+    availableCash = 0,
+    withdrawAmount = 0
+  } = params;
+
+  // Specific cash check for withdrawal
+  if (currentAction === 'withdraw' && /cash/i.test(matchedActionStr) && availableCash < withdrawAmount) {
+    const suggestedAmt = Math.max(1000, Math.min(availableCash, withdrawAmount));
+    return `Last time cash covered this. Cash is now ${formatINR(availableCash)}, so cash alone won't cover it. Consider withdrawing a smaller amount (for example ${formatINR(suggestedAmt)}) and keeping the rest invested.`;
+  }
+
+  // If past record outcome mentions missed gains or dip costs (e.g. dec_1: "Resumed. Nifty 50 rose 7.8% while paused; you missed about ₹2,140 of gains.")
+  const missedGainsMatch = matchedOutcome.match(/missed about (₹[\d,]+)/i);
+  const costGainsStr = missedGainsMatch ? missedGainsMatch[1] : null;
+
+  if (currentAction === 'withdraw') {
+    if (costGainsStr) {
+      return `Last time, pausing during a dip cost about ${costGainsStr} in missed gains. Consider withdrawing a smaller amount and keeping the rest invested.`;
+    }
+    if (matchedReason === 'Emergency') {
+      if (availableCash >= withdrawAmount) {
+        return `Check if available cash (${formatINR(availableCash)}) can cover this without withdrawing from your goal fund.`;
+      }
+      return 'Consider withdrawing a smaller amount now and keeping the rest invested toward your goal.';
+    }
+    if (matchedReason === 'Market worry') {
+      return 'Last time, changing course during market worry had a cost. Consider withdrawing a smaller amount and keeping the rest invested.';
+    }
+    if (matchedReason === 'Temporary cash need') {
+      return 'Consider withdrawing a smaller amount or exploring short-term cash reserves before liquidating goal units.';
+    }
+    if (matchedReason === 'Big purchase') {
+      return 'Consider withdrawing a smaller amount now and keeping the rest invested toward your goal.';
+    }
+    if (matchedReason === 'Rebalancing') {
+      return 'Review your allocation first; a smaller withdrawal or adjustment may be enough.';
+    }
+    return 'Consider withdrawing a smaller amount and keeping the rest invested.';
+  }
+
+  if (currentAction === 'reduce') {
+    if (costGainsStr) {
+      return `Last time, pausing cost about ${costGainsStr} in missed gains. A temporary reduction helps keep instalments active while freeing up cash.`;
+    }
+    if (matchedReason === 'Temporary cash need') {
+      return 'Consider a temporary reduction for 1–3 months with auto-restore rather than a permanent change.';
+    }
+    if (matchedReason === 'Market worry') {
+      return 'Consider reducing temporarily instead of a full pause so some instalments continue buying units.';
+    }
+    if (matchedReason === 'Emergency') {
+      return 'Reduce temporarily to address immediate needs while keeping your compounding journey active.';
+    }
+    return 'Consider reducing temporarily with auto-restore rather than a permanent reduction.';
+  }
+
+  // currentAction === 'pause'
+  if (costGainsStr) {
+    return `Last time, pausing cost about ${costGainsStr} in missed gains. If you pause, set an auto-resume (e.g. 1 month) to limit missed compounding.`;
+  }
+  if (matchedReason === 'Temporary cash need') {
+    return 'Same plan as last time: pause 1 month with auto-resume.';
+  }
+  if (matchedReason === 'Market worry') {
+    return 'Consider reducing temporarily instead of a full pause so some instalments continue.';
+  }
+  if (matchedReason === 'Emergency') {
+    return 'Check if available cash can fulfill the emergency without pausing ongoing SIP investments.';
+  }
+  return 'Pause for a short duration with auto-resume, then review at your 30-day check-in.';
 }

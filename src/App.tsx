@@ -91,6 +91,7 @@ export function App() {
       goalCorpus: goal.corpusNow,
       goalMonthlyContribution: goal.monthlyContribution,
       goalMonthsLeft: goal.monthsLeft,
+      goalTargetDate: goal.targetDate,
       availableCash: state.availableCash,
       anonUserId: 'u_4821'
     });
@@ -111,6 +112,7 @@ export function App() {
       goalCorpus: goal.corpusNow,
       goalMonthlyContribution: goal.monthlyContribution,
       goalMonthsLeft: goal.monthsLeft,
+      goalTargetDate: goal.targetDate,
       availableCash: state.availableCash,
       anonUserId: 'u_4821'
     });
@@ -130,6 +132,7 @@ export function App() {
       goalCorpus: goal.corpusNow,
       goalMonthlyContribution: goal.monthlyContribution,
       goalMonthsLeft: goal.monthsLeft,
+      goalTargetDate: goal.targetDate,
       availableCash: state.availableCash,
       anonUserId: 'u_4821'
     });

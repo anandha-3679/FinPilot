@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { calculateImpact, simulate, monthsToTarget } from './impactEngine';
-import { buildExplanationText, formatShortINR, formatMonths, formatINR } from './format';
+import {
+  buildExplanationText,
+  formatShortINR,
+  formatMonths,
+  formatINR,
+  buildSuggestedPlan,
+  getDecisionActionCategory
+} from './format';
 
 describe('FinPilot Impact Engine - Comprehensive Unit Tests', () => {
   // Early Retirement: target ₹1,20,00,000, corpus ₹7,22,000, ₹15,000/mo, n=193
@@ -366,5 +373,123 @@ describe('FinPilot Impact Engine - Comprehensive Unit Tests', () => {
     expect(formatMonths(2)).toBe('2 months');
     expect(formatMonths(3)).toBe('3 months');
     expect(formatMonths(1)).not.toBe('1 months');
+  });
+
+  it('uses the linked goal own target date and months left across both goals and all actions', () => {
+    const goals = [
+      { name: 'Home Down Payment', targetDate: 'Oct 2030', monthsLeft: 47 },
+      { name: 'Early Retirement', targetDate: 'Dec 2042', monthsLeft: 193 }
+    ];
+    const actions: ('pause' | 'reduce' | 'withdraw')[] = ['pause', 'reduce', 'withdraw'];
+
+    for (const goal of goals) {
+      const otherGoal = goals.find((g) => g.name !== goal.name)!;
+
+      for (const action of actions) {
+        const text = buildExplanationText({
+          action,
+          amount: 10000,
+          pauseMonths: 3,
+          reducedAmount: 5000,
+          reduceDurationMonths: 3,
+          withdrawAmount: 50000,
+          contributionsMissed: 30000,
+          valueLost: 45000,
+          goalDelayMonths: 2,
+          goalName: goal.name,
+          goalMonthsLeft: goal.monthsLeft,
+          goalDate: goal.targetDate
+        });
+
+        // Must include the goal's own target date
+        expect(text).toContain(goal.targetDate);
+        // Must never include the other goal's target date
+        expect(text).not.toContain(otherGoal.targetDate);
+
+        // Must include the goal's own months left
+        expect(text).toContain(`${goal.monthsLeft} months`);
+        // Must never include the other goal's months left
+        expect(text).not.toContain(`${otherGoal.monthsLeft} months`);
+
+        // Must include the goal's own name
+        expect(text).toContain(goal.name);
+        expect(text).not.toContain(otherGoal.name);
+      }
+    }
+  });
+
+  it('ranks matching decision records: same reason + same action first, then same reason + diff action', () => {
+    const decisions = [
+      { id: '1', reasonCategory: 'Market worry', action: 'Paused UTI SIP (₹10,000/mo)' },
+      { id: '2', reasonCategory: 'Market worry', action: 'Withdrew ₹50,000' },
+      { id: '3', reasonCategory: 'Emergency', action: 'Withdrew ₹20,000' }
+    ];
+
+    // Case A: Current action is 'withdraw', reason is 'Market worry'
+    // Matches should prioritize id 2 (same reason + same action withdraw) over id 1 (same reason + action pause)
+    const matchingReasonA = decisions.filter(
+      (d) => d.reasonCategory.toLowerCase() === 'Market worry'.toLowerCase()
+    );
+    const bestMatchA =
+      matchingReasonA.find((d) => getDecisionActionCategory(d.action) === 'withdraw') ||
+      matchingReasonA[0];
+    expect(bestMatchA.id).toBe('2');
+
+    // Case B: Current action is 'pause', reason is 'Market worry'
+    // Matches should prioritize id 1 (same action pause)
+    const bestMatchB =
+      matchingReasonA.find((d) => getDecisionActionCategory(d.action) === 'pause') ||
+      matchingReasonA[0];
+    expect(bestMatchB.id).toBe('1');
+
+    // Case C: Current action is 'reduce', reason is 'Market worry'
+    // Neither is reduce; falls back to first record with same reason (id 1)
+    const bestMatchC =
+      matchingReasonA.find((d) => getDecisionActionCategory(d.action) === 'reduce') ||
+      matchingReasonA[0];
+    expect(bestMatchC.id).toBe('1');
+  });
+
+  it('generates suggested plan tailored for the current action', () => {
+    // Current action is withdraw, but past action was pausing during a dip with missed gains
+    const planWithdraw = buildSuggestedPlan({
+      currentAction: 'withdraw',
+      matchedActionStr: 'Paused UTI SIP (₹10,000/mo)',
+      matchedReason: 'Market worry',
+      matchedOutcome: 'Resumed. Nifty 50 rose 7.8% while paused; you missed about ₹2,140 of gains.',
+      availableCash: 50000,
+      withdrawAmount: 50000
+    });
+    expect(planWithdraw).toContain('Last time, pausing during a dip cost about ₹2,140 in missed gains.');
+    expect(planWithdraw).toContain('Consider withdrawing a smaller amount and keeping the rest invested.');
+
+    // Cash check when current action is withdraw and past action used cash
+    const planCashShort = buildSuggestedPlan({
+      currentAction: 'withdraw',
+      matchedActionStr: 'Used cash reserve ₹50,000 instead of withdrawing',
+      matchedReason: 'Emergency',
+      availableCash: 12000,
+      withdrawAmount: 50000
+    });
+    expect(planCashShort).toContain('Last time cash covered this. Cash is now ₹12,000, so cash alone won\'t cover it.');
+    expect(planCashShort).toContain('Consider withdrawing a smaller amount');
+
+    // Current action is reduce
+    const planReduce = buildSuggestedPlan({
+      currentAction: 'reduce',
+      matchedActionStr: 'Paused UTI SIP (₹10,000/mo)',
+      matchedReason: 'Market worry',
+      matchedOutcome: 'Resumed. Nifty 50 rose 7.8% while paused; you missed about ₹2,140 of gains.'
+    });
+    expect(planReduce).toContain('A temporary reduction helps keep instalments active while freeing up cash.');
+
+    // Current action is pause
+    const planPause = buildSuggestedPlan({
+      currentAction: 'pause',
+      matchedActionStr: 'Paused UTI SIP (₹10,000/mo)',
+      matchedReason: 'Temporary cash need',
+      matchedOutcome: 'Resumed on schedule, no goal impact.'
+    });
+    expect(planPause).toContain('Same plan as last time: pause 1 month with auto-resume.');
   });
 });

@@ -11,7 +11,15 @@ import {
   LineChart as LineChartIcon
 } from 'lucide-react';
 import { calculateImpact, ImpactResult } from '../engine/impactEngine';
-import { formatINR, formatShortINR, formatMonths, buildExplanationText, groupRupeesInText } from '../engine/format';
+import {
+  formatINR,
+  formatShortINR,
+  formatMonths,
+  buildExplanationText,
+  groupRupeesInText,
+  buildSuggestedPlan,
+  getDecisionActionCategory
+} from '../engine/format';
 import { DecisionRecord } from '../data/seed';
 import { CompassLogo } from './CompassLogo';
 import {
@@ -34,6 +42,7 @@ export interface FinPilotPayload {
   goalCorpus: number;
   goalMonthlyContribution: number;
   goalMonthsLeft: number;
+  goalTargetDate?: string;
   availableCash: number;
   anonUserId: string; // "u_4821"
 }
@@ -282,10 +291,23 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
     });
   }, [payload, pauseMonths, annualRateDecimal]);
 
-  // Check Decision Memory for matches
-  const matchedMemory = decisions.find(
-    (d) => d.reasonCategory.toLowerCase() === selectedReason.toLowerCase()
-  );
+  // Check Decision Memory for matches:
+  // Rank same reason + same action first, then same reason with a different action
+  const matchedMemory = useMemo(() => {
+    const matchingReason = decisions.filter(
+      (d) => d.reasonCategory.toLowerCase() === selectedReason.toLowerCase()
+    );
+    if (matchingReason.length === 0) return null;
+
+    // Same action match
+    const sameActionMatch = matchingReason.find(
+      (d) => getDecisionActionCategory(d.action) === payload.action
+    );
+    if (sameActionMatch) return sameActionMatch;
+
+    // Otherwise, first record with same reason
+    return matchingReason[0];
+  }, [decisions, selectedReason, payload.action]);
 
   // Lowest value lost "Suggested for you" determination among non-Keep options fitting reason
   const suggestedOptionKey = useMemo(() => {
@@ -363,6 +385,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
       goalDelayMonths: currentImpact.goalDelayMonths,
       goalName: payload.goalName,
       goalMonthsLeft: payload.goalMonthsLeft,
+      goalDate: payload.goalTargetDate,
       assumedRate,
       selectedReason,
       marketMode
@@ -629,21 +652,14 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                   </div>
                   <div className="p-2.5 rounded-lg bg-emerald-100/70 border border-emerald-300 text-xs text-emerald-900">
                     <span className="font-semibold">Suggested plan from past outcome:</span>{' '}
-                    {payload.action === 'withdraw' &&
-                    /cash/i.test(matchedMemory.action) &&
-                    payload.availableCash < withdrawAmount
-                      ? `Last time cash covered this. Cash is now ${formatINR(payload.availableCash)}, so cash alone won't cover it. Consider withdrawing a smaller amount (for example ${formatINR(Math.max(1000, Math.min(payload.availableCash, withdrawAmount)))}) and keeping the rest invested.`
-                      : matchedMemory.reasonCategory === 'Temporary cash need'
-                      ? 'Same plan as last time: pause 1 month with auto-resume.'
-                      : matchedMemory.reasonCategory === 'Market worry'
-                      ? 'Consider reducing temporarily instead of a full pause so some instalments continue.'
-                      : matchedMemory.reasonCategory === 'Emergency'
-                      ? 'Check if available cash can fulfill the emergency without reducing portfolio equity.'
-                      : matchedMemory.reasonCategory === 'Big purchase'
-                      ? 'Consider withdrawing a smaller amount now and keeping the rest invested toward your goal.'
-                      : matchedMemory.reasonCategory === 'Rebalancing'
-                      ? 'Review your allocation first; a smaller adjustment may be enough.'
-                      : 'Take a smaller step first (a reduced amount or shorter pause), then review at your 30-day check-in.'}
+                    {buildSuggestedPlan({
+                      currentAction: payload.action,
+                      matchedActionStr: matchedMemory.action,
+                      matchedReason: matchedMemory.reasonCategory,
+                      matchedOutcome: matchedMemory.outcome,
+                      availableCash: payload.availableCash,
+                      withdrawAmount
+                    })}
                   </div>
                 </div>
               )}
