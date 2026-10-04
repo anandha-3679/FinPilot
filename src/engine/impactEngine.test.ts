@@ -348,7 +348,11 @@ describe('FinPilot Impact Engine - Comprehensive Unit Tests', () => {
   });
 
   it('Indian units in formatShortINR: formats 91000, 1.8 lakh, 1.2 crore and never uses k', () => {
-    expect(formatShortINR(91000)).toBe('about ₹0.9 lakh');
+    expect(formatShortINR(91000)).toBe('₹91,000');
+    expect(formatShortINR(61000)).toBe('₹61,000');
+    expect(formatShortINR(15000)).toBe('₹15,000');
+    expect(formatShortINR(99999)).toBe('₹99,999');
+    expect(formatShortINR(100000)).toBe('₹1 lakh');
     expect(formatShortINR(180000)).toBe('₹1.8 lakh');
     expect(formatShortINR(12000000)).toBe('₹1.2 crore');
     expect(formatShortINR(5000)).toBe('₹5,000');

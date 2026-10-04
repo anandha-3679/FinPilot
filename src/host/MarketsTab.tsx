@@ -83,20 +83,20 @@ export const MarketsTab: React.FC<MarketsTabProps> = ({
     ? {
         headline: 'Global headwinds trigger temporary pullbacks across large-caps',
         summary:
-          'Nifty 50 is down 4.2% this week amidst FII outflows and global bond yields. Historical analysis shows that investors continuing SIPs during such pullbacks average 16.4% lower unit acquisition costs.',
+          'Sample scenario: Nifty 50 is down 4.2% this week amid FII outflows and global bond yields. When prices fall, a SIP instalment buys more units than it did before the dip.',
         actionGuide:
           'FinPilot reminder: Pausing now means skipping historically cheaper purchase windows.',
         sentiment: 'High Volatility (Fear sentiment prevailing)',
-        fiiDiiFlow: 'FII: -₹4,210 Cr · DII: +₹4,890 Cr (Domestic institutions absorbing supply)'
+        fiiDiiFlow: 'Sample FII/DII flows: FII: -₹4,210 Cr · DII: +₹4,890 Cr'
       }
     : {
         headline: 'Markets remain steady and consolidate near all-time highs',
         summary:
-          'Domestic liquidity and consistent monthly mutual fund SIP inflows (₹23,332 Cr AMFI benchmark) continue to support constructive sentiment. Volatility index (India VIX) remains subdued at comfortable levels.',
+          'Sample scenario: markets are steady, with consistent monthly SIP inflows from retail investors supporting sentiment. India VIX remains subdued.',
         actionGuide:
           'Your portfolio is compounding predictably toward active financial goals.',
         sentiment: 'Calm & Steady (Constructive compounding environment)',
-        fiiDiiFlow: 'FII: +₹620 Cr · DII: +₹1,180 Cr (Net domestic institutional inflow)'
+        fiiDiiFlow: 'Sample FII/DII flows: FII: +₹620 Cr · DII: +₹1,180 Cr'
       };
 
   return (
@@ -107,11 +107,11 @@ export const MarketsTab: React.FC<MarketsTabProps> = ({
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Market Intelligence</h1>
             <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              Live Mock Data
+              Sample market data
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time Indian market indices, your invested fund trends, and macroeconomic sentiment context
+            Sample Indian market indices, your invested fund trends, and market context. All figures are illustrative.
           </p>
         </div>
 
@@ -144,7 +144,16 @@ export const MarketsTab: React.FC<MarketsTabProps> = ({
       {/* Primary Market Indices Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {indices.map((idx) => {
+          const isVix = idx.name === 'INDIA VIX';
           const isNegative = idx.percent.startsWith('-');
+          // VIX: falling is neutral (calmer), rising is a caution colour
+          const tone = isVix
+            ? isNegative
+              ? 'text-slate-600'
+              : 'text-amber-700'
+            : isNegative
+            ? 'text-rose-600'
+            : 'text-emerald-600';
           return (
             <div
               key={idx.name}
@@ -154,9 +163,9 @@ export const MarketsTab: React.FC<MarketsTabProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-700 tracking-wide">{idx.name}</span>
                   {isNegative ? (
-                    <ArrowDownRight className="w-4 h-4 text-rose-500" />
+                    <ArrowDownRight className={`w-4 h-4 ${isVix ? 'text-slate-500' : 'text-rose-500'}`} />
                   ) : (
-                    <ArrowUpRight className="w-4 h-4 text-emerald-600" />
+                    <ArrowUpRight className={`w-4 h-4 ${isVix ? 'text-amber-600' : 'text-emerald-600'}`} />
                   )}
                 </div>
                 <div className="text-[10px] text-slate-400 mt-0.5">{idx.category}</div>
@@ -164,10 +173,12 @@ export const MarketsTab: React.FC<MarketsTabProps> = ({
               </div>
 
               <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
-                <span className={isNegative ? 'text-rose-600 font-semibold' : 'text-emerald-600 font-semibold'}>
+                <span className={`${tone} font-semibold`}>
                   {idx.change} ({idx.percent})
                 </span>
-                <span className="text-[11px] text-slate-400 font-sans">24h Day Range</span>
+                <span className="text-[11px] text-slate-500 font-sans">
+                  {isVix ? 'Lower = calmer · sample' : 'Sample data'}
+                </span>
               </div>
             </div>
           );
@@ -255,12 +266,11 @@ export const MarketsTab: React.FC<MarketsTabProps> = ({
                 <Compass className="w-4 h-4 text-emerald-600" />
                 FinPilot Behavioral Guidance on Market Dips
               </span>
-              <span className="text-[11px] text-slate-400">AMFI Historical Benchmark</span>
+              <span className="text-[11px] text-slate-500">General context</span>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              When Indian equity markets experience 4–10% drawdowns, pausing active SIPs creates an opportunity cost. 
-              Historically, 100% of Nifty 50 5-year rolling SIP periods in the past 20 years have delivered positive returns, 
-              with median CAGRs of 13.8%.
+              When Indian equity markets experience 4–10% drawdowns, pausing active SIPs creates an opportunity cost.
+              Staying invested through dips is general, uncited context, not a forecast or a guarantee of returns.
             </p>
           </div>
         </div>
@@ -327,7 +337,7 @@ export const MarketsTab: React.FC<MarketsTabProps> = ({
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
             <div className="font-semibold text-slate-800 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Smart Recommendation:</span>
+              <span>Market context:</span>
             </div>
             <p className="text-[11px] leading-relaxed">
               {isVolatile

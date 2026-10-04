@@ -260,7 +260,7 @@ export function useAppStore() {
               id: `dec_${Date.now()}`,
               date: '2 Nov 2026',
               reasonCategory,
-              action: `Reduced ${fundName} to ₹${targetAmount.toLocaleString('en-IN')}/mo ${durationDesc}`,
+              action: `Reduced ${fundName} to ${formatINR(targetAmount)}/mo ${durationDesc}`,
               durationOrAmount: reducePermanent ? 'Permanent' : `${reduceMonths} months`,
               outcome: 'Awaiting outcome (30-day check-in).',
               fundName
@@ -275,7 +275,7 @@ export function useAppStore() {
             date: '2 Nov 2026',
             type: 'SIP_REDUCE',
             title: `SIP Reduced: ${fundName}`,
-            description: `Reduced to ₹${targetAmount.toLocaleString('en-IN')}/mo ${durationDesc}`
+            description: `Reduced to ${formatINR(targetAmount)}/mo ${durationDesc}`
           },
           ...updatedActivities
         ];
@@ -285,7 +285,7 @@ export function useAppStore() {
             id: `chk_${Date.now()}`,
             date: '2 Dec 2026',
             title: 'Review SIP reduction',
-            description: `Check-in scheduled for ${fundName} reduced to ₹${targetAmount.toLocaleString('en-IN')}/mo.`,
+            description: `Check-in scheduled for ${fundName} reduced to ${formatINR(targetAmount)}/mo.`,
             actionType: 'resume_sip'
           },
           ...updatedCheckIns
@@ -302,7 +302,7 @@ export function useAppStore() {
               reasonCategory,
               action: `Used cash reserve ${formatINR(withdrawAmount)} instead of withdrawing`,
               durationOrAmount: `${formatINR(withdrawAmount)}`,
-              outcome: 'Protected portfolio investments. ₹0 goal impact.',
+              outcome: 'Awaiting outcome (30-day check-in).',
               fundName
             },
             ...updatedDecisions
@@ -339,8 +339,8 @@ export function useAppStore() {
               id: `dec_${Date.now()}`,
               date: '2 Nov 2026',
               reasonCategory,
-              action: `Withdrew ₹${withdrawAmount} from ${fundName}`,
-              durationOrAmount: `₹${withdrawAmount}`,
+              action: `Withdrew ${formatINR(withdrawAmount)} from ${fundName}`,
+              durationOrAmount: formatINR(withdrawAmount),
               outcome: 'Awaiting outcome (30-day check-in).',
               fundName
             },
@@ -354,7 +354,7 @@ export function useAppStore() {
             date: '2 Nov 2026',
             type: 'WITHDRAW',
             title: `Withdrawal executed: ${fundName}`,
-            description: `Withdrew ₹${withdrawAmount}. Deposited to bank/cash balance.`
+            description: `Withdrew ${formatINR(withdrawAmount)}. Deposited to bank/cash balance.`
           },
           ...updatedActivities
         ];

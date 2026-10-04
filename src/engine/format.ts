@@ -50,14 +50,19 @@ export function formatShortINR(value: number): string {
   } else if (absVal >= 100000) {
     const lakh = absVal / 100000;
     formatted = `₹${lakh.toFixed(2).replace(/\.?0+$/, '')} lakh`;
-  } else if (absVal >= 10000) {
-    const lakh = absVal / 100000;
-    formatted = `about ₹${lakh.toFixed(1)} lakh`;
   } else {
-    formatted = `₹${Math.round(absVal).toLocaleString('en-IN')}`;
+    // Below ₹1 lakh: always whole rupees with Indian grouping
+    formatted = formatINR(absVal);
   }
 
   return isNegative ? `-${formatted}` : formatted;
+}
+
+/**
+ * Re-formats any ungrouped ₹ amounts (e.g. "₹50000", "₹50,000") in text with Indian grouping.
+ */
+export function groupRupeesInText(text: string): string {
+  return text.replace(/₹(\d[\d,]*)/g, (_m, num: string) => formatINR(Number(num.replace(/,/g, ''))));
 }
 
 /**

@@ -11,7 +11,7 @@ import {
   LineChart as LineChartIcon
 } from 'lucide-react';
 import { calculateImpact, ImpactResult } from '../engine/impactEngine';
-import { formatINR, formatShortINR, formatMonths, buildExplanationText } from '../engine/format';
+import { formatINR, formatShortINR, formatMonths, buildExplanationText, groupRupeesInText } from '../engine/format';
 import { DecisionRecord } from '../data/seed';
 import { CompassLogo } from './CompassLogo';
 import {
@@ -111,6 +111,12 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
   const [withdrawAmount, setWithdrawAmount] = useState<number>(
     payload.action === 'withdraw' ? Math.min(payload.amount, 50000) : 0
   );
+  // Middle-card "smaller amount" slider; null = default 50% of the request
+  const [smallerOverride, setSmallerOverride] = useState<number | null>(null);
+  const smallerAmount = Math.max(
+    1,
+    Math.min(smallerOverride ?? Math.round(withdrawAmount * 0.5), withdrawAmount)
+  );
 
   // Selected alternative choice
   const [selectedAlternative, setSelectedAlternative] = useState<
@@ -138,6 +144,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
       setReduceDurationMonths(3);
       setReducePermanent(false);
       setWithdrawAmount(payload.action === 'withdraw' ? Math.min(payload.amount, 50000) : 0);
+      setSmallerOverride(null);
       setSelectedAlternative(
         payload.action === 'withdraw' ? 'keep' : 'pause_autoresume'
       );
@@ -246,7 +253,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
       newMonthlyAmount: reducedAmount,
       reduceMonths: reduceDurationMonths,
       reducePermanent,
-      withdrawAmount: withdrawAmount,
+      withdrawAmount: payload.action === 'withdraw' ? smallerAmount : withdrawAmount,
       annualRate: annualRateDecimal
     });
   }, [
@@ -255,6 +262,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
     reduceDurationMonths,
     reducePermanent,
     withdrawAmount,
+    smallerAmount,
     annualRateDecimal
   ]);
 
@@ -287,10 +295,11 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
         }
         return 'withdraw_smaller';
       }
-      if (selectedReason === 'Market worry') {
+      if (selectedReason === 'Market worry' || selectedReason === 'Rebalancing') {
         return 'withdraw_smaller';
       }
-      return 'withdraw_smaller';
+      // Big purchase / Other: no suggestion
+      return null;
     } else {
       // SIP actions
       if (selectedReason === 'Temporary cash need') {
@@ -438,7 +447,11 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
       reduceMonths: reduceDurationMonths,
       reducePermanent,
       withdrawAmount:
-        payload.action === 'withdraw' ? withdrawAmount : undefined,
+        payload.action === 'withdraw'
+          ? selectedAlternative === 'withdraw_smaller'
+            ? smallerAmount
+            : withdrawAmount
+          : undefined,
       rememberDecision,
       resumeDate: chosenResumeDate
     });
@@ -474,12 +487,14 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
             )}
             <div>
               <div className="flex items-center gap-2.5">
-                <CompassLogo size={22} showText={false} />
+                <span className="rounded-lg bg-emerald-100 ring-1 ring-emerald-700/40 p-0.5 inline-flex">
+                  <CompassLogo size={32} showText={false} />
+                </span>
                 <span className="text-xs uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
                   FinPilot Intelligence
                 </span>
-                <span className="text-xs text-slate-500">
-                  Anonymous session: <span className="font-mono font-medium">{payload.anonUserId}</span>
+                <span className="text-xs text-slate-600">
+                  Pseudonymous session: <span className="font-mono font-medium">{payload.anonUserId}</span>
                 </span>
               </div>
               <h2 className="text-lg font-bold text-slate-900 mt-1">
@@ -601,20 +616,28 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                   </div>
                   <div className="text-xs text-slate-700 space-y-1">
                     <p>
-                      <span className="text-slate-500 font-medium">Previous Action:</span> {matchedMemory.action}
+                      <span className="text-slate-500 font-medium">Previous Action:</span> {groupRupeesInText(matchedMemory.action)}
                     </p>
                     <p>
-                      <span className="text-slate-500 font-medium">Observed Outcome:</span> {matchedMemory.outcome}
+                      <span className="text-slate-500 font-medium">Observed Outcome:</span>{' '}
+                      {/^awaiting/i.test(matchedMemory.outcome ?? '') || !matchedMemory.outcome
+                        ? 'Awaiting outcome (30-day check-in)'
+                        : groupRupeesInText(matchedMemory.outcome)}
                     </p>
                   </div>
                   <div className="p-2.5 rounded-lg bg-emerald-100/70 border border-emerald-300 text-xs text-emerald-900">
                     <span className="font-semibold">Suggested plan from past outcome:</span>{' '}
-                    {matchedMemory.reasonCategory === 'Temporary cash need' &&
-                      'Same plan as last time: pause 1 month with auto-resume.'}
-                    {matchedMemory.reasonCategory === 'Market worry' &&
-                      'Consider reducing temporarily instead of a full pause so some instalments continue.'}
-                    {matchedMemory.reasonCategory === 'Emergency' &&
-                      'Check if available cash can fulfill the emergency without reducing portfolio equity.'}
+                    {matchedMemory.reasonCategory === 'Temporary cash need'
+                      ? 'Same plan as last time: pause 1 month with auto-resume.'
+                      : matchedMemory.reasonCategory === 'Market worry'
+                      ? 'Consider reducing temporarily instead of a full pause so some instalments continue.'
+                      : matchedMemory.reasonCategory === 'Emergency'
+                      ? 'Check if available cash can fulfill the emergency without reducing portfolio equity.'
+                      : matchedMemory.reasonCategory === 'Big purchase'
+                      ? 'Consider withdrawing a smaller amount now and keeping the rest invested toward your goal.'
+                      : matchedMemory.reasonCategory === 'Rebalancing'
+                      ? 'Review your allocation first; a smaller adjustment may be enough.'
+                      : 'Take a smaller step first (a reduced amount or shorter pause), then review at your 30-day check-in.'}
                   </div>
                 </div>
               )}
@@ -998,16 +1021,31 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                     <div>
                       <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
                         {payload.action === 'withdraw'
-                          ? `Withdraw ${formatINR(withdrawAmount)}`
+                          ? 'Withdraw a smaller amount'
                           : `Reduce to ${formatINR(reducedAmount)}/mo`}
                       </div>
                       <p className="text-xs text-slate-500 mt-1">
                         {payload.action === 'withdraw'
-                          ? 'Withdraw the specified partial amount while preserving remaining balance.'
+                          ? `Withdraw ${formatINR(smallerAmount)} and keep the rest invested.`
                           : reducePermanent
                           ? 'Permanent reduction over horizon.'
                           : `Reduce for ${reduceDurationMonths} months, then auto-restore.`}
                       </p>
+                      {payload.action === 'withdraw' && (
+                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="range"
+                            aria-label="Smaller withdrawal amount"
+                            min={1000}
+                            max={Math.max(1000, withdrawAmount)}
+                            step={1000}
+                            value={smallerAmount}
+                            onChange={(e) => setSmallerOverride(Number(e.target.value))}
+                            className="w-full accent-emerald-600"
+                          />
+                          <div className="text-xs font-mono font-semibold text-emerald-800">{formatINR(smallerAmount)}</div>
+                        </div>
+                      )}
                     </div>
                     <div className="mt-4 pt-3 border-t border-slate-100 space-y-1 text-xs font-mono">
                       <div className="text-amber-700 font-bold">
@@ -1358,7 +1396,7 @@ export const FinPilotModal: React.FC<FinPilotModalProps> = ({
                       {selectedAlternative === 'use_cash' &&
                         `Use cash reserve (${formatINR(withdrawAmount)})`}
                       {selectedAlternative === 'withdraw_smaller' &&
-                        `Withdraw ${formatINR(withdrawAmount)}`}
+                        `Withdraw ${formatINR(smallerAmount)}`}
                       {selectedAlternative === 'custom' &&
                         (payload.action === 'withdraw'
                           ? `Withdraw ${formatINR(withdrawAmount)}`

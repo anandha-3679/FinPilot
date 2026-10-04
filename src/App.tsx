@@ -422,7 +422,7 @@ export function App() {
       />
 
       {/* Toast Notification Container */}
-      <div className="fixed bottom-4 left-4 z-50 space-y-2 pointer-events-none">
+      <div className="fixed bottom-4 right-4 z-[200] space-y-2 pointer-events-none max-w-sm w-[calc(100vw-2rem)] flex flex-col items-end">
         {state.toasts.map((toast) => (
           <div
             key={toast.id}

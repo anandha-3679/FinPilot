@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { History, Trash2, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DecisionRecord, ActivityItem, CheckInReminder } from '../data/seed';
+import { groupRupeesInText } from '../engine/format';
 
 interface ActivityTabProps {
   decisions: DecisionRecord[];
@@ -85,16 +86,16 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
                     <span className="text-xs font-mono text-slate-500">{dec.date}</span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-slate-900 mt-3">{dec.action}</h3>
+                  <h3 className="text-sm font-bold text-slate-900 mt-3">{groupRupeesInText(dec.action)}</h3>
                   <div className="text-xs text-slate-500 mt-0.5 font-mono">
-                    Amount / Duration: {dec.durationOrAmount}
+                    Amount / Duration: {groupRupeesInText(dec.durationOrAmount)}
                   </div>
 
                   <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
                     <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">
                       Recorded Outcome
                     </div>
-                    {dec.outcome}
+                    {/^awaiting/i.test(dec.outcome ?? '') ? 'Awaiting outcome (30-day check-in)' : groupRupeesInText(dec.outcome ?? '')}
                   </div>
                 </div>
 
