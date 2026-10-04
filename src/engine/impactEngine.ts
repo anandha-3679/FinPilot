@@ -123,6 +123,8 @@ export interface CalculateImpactParams {
   goalMonthsLeft: number; // n
   pauseMonths?: number; // m (for pause)
   newMonthlyAmount?: number; // for reduce
+  reduceMonths?: number; // N months (default 3) for reduce
+  reducePermanent?: boolean; // if false, auto-restores after reduceMonths
   withdrawAmount?: number; // W (for withdraw)
   annualRate?: number; // default 0.12
 }
@@ -140,6 +142,8 @@ export function calculateImpact(params: CalculateImpactParams): ImpactResult {
     goalMonthsLeft: n,
     pauseMonths = 3,
     newMonthlyAmount = 0,
+    reduceMonths = 3,
+    reducePermanent = false,
     withdrawAmount = 0,
     annualRate = ANNUAL_RETURN_DEFAULT
   } = params;
@@ -168,19 +172,28 @@ export function calculateImpact(params: CalculateImpactParams): ImpactResult {
     const oldAmount = currentAmountOrHolding;
     const newAmount = newMonthlyAmount;
     const delta = Math.max(0, oldAmount - newAmount);
-    contributionsMissed = delta * n;
 
-    // valueLost = Σ_{k=1..n} (old-new) * (1+r)^(n-k)
-    let sumLost = 0;
-    for (let k = 1; k <= n; k++) {
-      sumLost += delta * Math.pow(1 + r, n - k);
-      adjustments[k] = -delta;
+    if (reducePermanent) {
+      contributionsMissed = delta * n;
+      let sumLost = 0;
+      for (let k = 1; k <= n; k++) {
+        sumLost += delta * Math.pow(1 + r, n - k);
+        adjustments[k] = -delta;
+      }
+      for (let k = n + 1; k <= 1200; k++) {
+        adjustments[k] = -delta;
+      }
+      valueLost = sumLost;
+    } else {
+      const N = Math.min(reduceMonths, n);
+      contributionsMissed = delta * N;
+      let sumLost = 0;
+      for (let k = 1; k <= N; k++) {
+        sumLost += delta * Math.pow(1 + r, n - k);
+        adjustments[k] = -delta;
+      }
+      valueLost = sumLost;
     }
-    // A SIP reduction is ongoing, so continuing beyond n maintains the reduced contribution
-    for (let k = n + 1; k <= 1200; k++) {
-      adjustments[k] = -delta;
-    }
-    valueLost = sumLost;
   } else if (action === 'withdraw') {
     const W = Math.min(withdrawAmount, currentAmountOrHolding);
     remainingHolding = Math.max(0, currentAmountOrHolding - W);
@@ -205,21 +218,24 @@ export function calculateImpact(params: CalculateImpactParams): ImpactResult {
   const percentageBefore = (projectedBefore / goalTarget) * 100;
   const percentageAfter = (projectedAfter / goalTarget) * 100;
 
-  // Trajectory points for charts (sample every month up to n, max 36 steps for clean rendering)
-  const trajectory: TrajectoryPoint[] = [];
+  // Trajectory points for charts: sample points across 0..n, and every month in the last 24 months (n-24..n)
+  const trajectoryMap = new Map<number, TrajectoryPoint>();
   const step = Math.max(1, Math.floor(n / 30));
   for (let m = 0; m <= n; m += step) {
     const b = m === 0 ? goalCorpus : simulate(goalCorpus, goalMonthlyContribution, m, {}, annualRate);
     const a = m === 0 ? modifiedStartCorpus : simulate(modifiedStartCorpus, goalMonthlyContribution, m, adjustments, annualRate);
-    trajectory.push({ month: m, corpusBefore: Math.round(b), corpusAfter: Math.round(a) });
+    trajectoryMap.set(m, { month: m, corpusBefore: Math.round(b), corpusAfter: Math.round(a) });
   }
-  if (trajectory[trajectory.length - 1].month !== n) {
-    trajectory.push({
-      month: n,
-      corpusBefore: Math.round(projectedBefore),
-      corpusAfter: Math.round(projectedAfter)
-    });
+  // Include every month for the last 24 months for zoom view
+  const zoomStart = Math.max(0, n - 24);
+  for (let m = zoomStart; m <= n; m++) {
+    if (!trajectoryMap.has(m)) {
+      const b = simulate(goalCorpus, goalMonthlyContribution, m, {}, annualRate);
+      const a = simulate(modifiedStartCorpus, goalMonthlyContribution, m, adjustments, annualRate);
+      trajectoryMap.set(m, { month: m, corpusBefore: Math.round(b), corpusAfter: Math.round(a) });
+    }
   }
+  const trajectory = Array.from(trajectoryMap.values()).sort((x, y) => x.month - y.month);
 
   return {
     valueLost: Math.round(valueLost),

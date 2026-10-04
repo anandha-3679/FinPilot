@@ -87,7 +87,7 @@ export const ActivityTab: React.FC<ActivityTabProps> = ({
 
                   <h3 className="text-sm font-bold text-white mt-3">{dec.action}</h3>
                   <div className="text-xs text-gray-400 mt-0.5 font-mono">
-                    Magnitude / Span: {dec.durationOrAmount}
+                    Amount / Duration: {dec.durationOrAmount}
                   </div>
 
                   <div className="mt-3 p-3 rounded-xl bg-[#0d1424] border border-[#1f2d48] text-xs text-gray-300">

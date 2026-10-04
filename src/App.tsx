@@ -144,8 +144,11 @@ export function App() {
       reasonCategory: decision.reasonCategory,
       newAmount: decision.newAmount,
       pauseMonths: decision.months,
+      reduceMonths: decision.reduceMonths,
+      reducePermanent: decision.reducePermanent,
       withdrawAmount: decision.withdrawAmount,
-      rememberDecision: decision.rememberDecision
+      rememberDecision: decision.rememberDecision,
+      resumeDate: decision.resumeDate
     });
   };
 

@@ -136,8 +136,11 @@ export function useAppStore() {
     reasonCategory: string;
     newAmount?: number;
     pauseMonths?: number;
+    reduceMonths?: number;
+    reducePermanent?: boolean;
     withdrawAmount?: number;
     rememberDecision?: boolean;
+    resumeDate?: string;
   }) => {
     const {
       decisionType,
@@ -145,8 +148,11 @@ export function useAppStore() {
       reasonCategory,
       newAmount,
       pauseMonths = 3,
+      reduceMonths = 3,
+      reducePermanent = false,
       withdrawAmount = 0,
-      rememberDecision = true
+      rememberDecision = true,
+      resumeDate
     } = params;
 
     setState((prev) => {
@@ -158,11 +164,12 @@ export function useAppStore() {
       let updatedCheckIns = [...prev.checkIns];
 
       // Format resume date (today = Nov 2026)
-      const resumeMonth = 11 + pauseMonths; // 1-indexed
+      const resumeMonth = 11 + (decisionType === 'reduce' ? reduceMonths : pauseMonths); // 1-indexed
       const resYear = 2026 + Math.floor((resumeMonth - 1) / 12);
       const resMoIndex = ((resumeMonth - 1) % 12);
       const moNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const resumeDateStr = `5 ${moNames[resMoIndex]} ${resYear}`;
+      const computedResumeDateStr = `5 ${moNames[resMoIndex]} ${resYear}`;
+      const effectiveResumeDateStr = resumeDate || computedResumeDateStr;
 
       if (decisionType === 'keep') {
         // No modification to SIP or Holding
@@ -187,7 +194,7 @@ export function useAppStore() {
             return {
               ...s,
               status: 'Paused',
-              pausedUntil: resumeDateStr,
+              pausedUntil: isAuto ? effectiveResumeDateStr : undefined,
               autoResumes: isAuto
             };
           }
@@ -200,7 +207,7 @@ export function useAppStore() {
               id: `dec_${Date.now()}`,
               date: '2 Nov 2026',
               reasonCategory,
-              action: `Paused ${fundName} for ${pauseMonths} mo${isAuto ? ' (auto-resume)' : ''}`,
+              action: `Paused ${fundName} for ${pauseMonths} months${isAuto ? ' (auto-resume)' : ''}`,
               durationOrAmount: `${pauseMonths} months`,
               outcome: 'Awaiting outcome (30-day check-in).',
               fundName
@@ -215,7 +222,7 @@ export function useAppStore() {
             date: '2 Nov 2026',
             type: 'SIP_PAUSE',
             title: `SIP Paused: ${fundName}`,
-            description: `Paused for ${pauseMonths} months (until ${resumeDateStr})`
+            description: `Paused for ${pauseMonths} months (until ${effectiveResumeDateStr})`
           },
           ...updatedActivities
         ];
@@ -231,16 +238,20 @@ export function useAppStore() {
           ...updatedCheckIns
         ];
       } else if (decisionType === 'reduce' || decisionType === 'reduce_amount') {
-        const targetAmount = newAmount !== undefined ? newAmount : 0;
+        const targetAmount = newAmount !== undefined && newAmount > 0 ? newAmount : 5000;
         updatedSIPs = updatedSIPs.map((s) => {
           if (s.fundName === fundName) {
             return {
               ...s,
-              amount: targetAmount
+              amount: targetAmount,
+              pausedUntil: !reducePermanent ? effectiveResumeDateStr : undefined,
+              autoResumes: !reducePermanent
             };
           }
           return s;
         });
+
+        const durationDesc = reducePermanent ? 'permanently' : `for ${reduceMonths} months`;
 
         if (rememberDecision) {
           updatedDecisions = [
@@ -248,8 +259,8 @@ export function useAppStore() {
               id: `dec_${Date.now()}`,
               date: '2 Nov 2026',
               reasonCategory,
-              action: `Reduced ${fundName} to ₹${targetAmount}/mo`,
-              durationOrAmount: `₹${targetAmount}/mo`,
+              action: `Reduced ${fundName} to ₹${targetAmount.toLocaleString('en-IN')}/mo ${durationDesc}`,
+              durationOrAmount: reducePermanent ? 'Permanent' : `${reduceMonths} months`,
               outcome: 'Awaiting outcome (30-day check-in).',
               fundName
             },
@@ -263,9 +274,20 @@ export function useAppStore() {
             date: '2 Nov 2026',
             type: 'SIP_REDUCE',
             title: `SIP Reduced: ${fundName}`,
-            description: `New monthly SIP amount set to ₹${targetAmount}`
+            description: `Reduced to ₹${targetAmount.toLocaleString('en-IN')}/mo ${durationDesc}`
           },
           ...updatedActivities
+        ];
+
+        updatedCheckIns = [
+          {
+            id: `chk_${Date.now()}`,
+            date: '2 Dec 2026',
+            title: 'Review SIP reduction',
+            description: `Check-in scheduled for ${fundName} reduced to ₹${targetAmount.toLocaleString('en-IN')}/mo.`,
+            actionType: 'resume_sip'
+          },
+          ...updatedCheckIns
         ];
       } else if (decisionType === 'use_cash') {
         // Use cash instead of withdrawing from holding

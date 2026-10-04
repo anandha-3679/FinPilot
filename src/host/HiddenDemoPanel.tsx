@@ -90,7 +90,7 @@ export const HiddenDemoPanel: React.FC<HiddenDemoPanelProps> = ({
           </button>
         </div>
         <p className="text-[10px] text-gray-500">
-          Slow mode tests the &gt;800ms abort fallback rule from Section 9.
+          Slow mode tests the &gt;800ms abort fallback rule.
         </p>
       </div>
 
