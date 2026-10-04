@@ -1,0 +1,11 @@
+# FinPilot Antigravity Rules
+# Global rules:
+- Output unified diffs only, no entire file rewrites.
+- Zero conversational preamble.
+
+# JS/TS Environment Rules:
+- Enforce strict functional component boundaries.
+- Quiet test execution (use `npm test -- --silent` or vitest silent mode).
+- Currency in INR format with Indian grouping (₹10,53,000, short form ₹1.82 lakh / ₹3.2 crore).
+- Uppercase strictly for: SIP, SIPs, NAV, AUM, AMFI.
+- Deterministic impact engine numbers strictly match Section 7 and 12 specs.
